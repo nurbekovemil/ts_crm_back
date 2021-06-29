@@ -1,5 +1,6 @@
 import fastify, {FastifyServerOptions} from 'fastify'
 import fastifyPostgres from 'fastify-postgres'
+import fastifyCors from 'fastify-cors'
 import jwt from 'fastify-jwt'
 
 import userRouters from './routers/user'
@@ -12,6 +13,7 @@ const buildApp = (opt: FastifyServerOptions) => {
    app.register(fastifyPostgres, {
       connectionString: `postgres://${user}:${password}@${host}/${database}`
    })
+   app.register(fastifyCors)
    app.register(jwt, {
       secret: secretkey
     })
