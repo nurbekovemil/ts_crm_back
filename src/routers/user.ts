@@ -9,6 +9,7 @@ import {
    userLoginResponse, 
    userMessageResponse,
    userQueryById,
+
 } from "../types/user"
 
 // user route schemas
@@ -96,7 +97,21 @@ const userRouters =  async (app: FastifyInstance) => {
          app.log.error(error)
       }
    })
-
+   app.get('/me', 
+   {
+      preHandler: verifyUserAuth
+   }, async (req) =>  {
+      try {
+         const {id}= req.user
+         const user = await app.pg.query('select * from users where id = $1', [id])
+         if(user.rowCount == 0) {
+            throw new Error('Произошла ошибка при получении данных пользователя!')
+         }
+         return {username: user.rows[0].username}
+      } catch (error) {
+         return error
+      }
+   })
    app.put('/',
    {
       preHandler: [verifyUserAuth],

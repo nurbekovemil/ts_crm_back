@@ -1,4 +1,5 @@
 import { FastifyRequest} from "fastify";
+import fastifyJwt, { FastifyJWTOptions } from 'fastify-jwt'
 
 export type userBodyReguest = FastifyRequest<{
    Body:{
@@ -30,4 +31,12 @@ export interface userMessageResponse {
 
 export interface userQueryById {
    id: string
+}
+
+declare module "fastify-jwt" {
+   interface FastifyJWT {
+     payload: { 
+        id: number
+      }
+   }
 }

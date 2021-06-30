@@ -21,7 +21,6 @@ const buildApp = (opt: FastifyServerOptions) => {
    app.register(userRouters, {
       prefix: '/user'
    })
-
    app.setErrorHandler((err, req, reply) => {
       reply
          .status(500)
