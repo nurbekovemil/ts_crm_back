@@ -29,9 +29,20 @@ export const userBodyRequestLoginSchema = {
 }
 
 export const userGetAllListSchema = {
+   query:{
+      type: 'object',
+      preoperties: {
+         limit: {
+            type: 'number'
+         },
+         page: {
+            type: 'number'
+         }
+      }
+   },
    response: {
       200: {
-         type: 'object',
+         type: 'array',
          properties: {
             id: {
                type: 'number'

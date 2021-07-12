@@ -8,8 +8,8 @@ import {
    userBodyReguest, 
    userLoginResponse, 
    userMessageResponse,
+   userGetMe,
    userQueryById,
-
 } from "../types/user"
 
 // user route schemas
@@ -19,135 +19,84 @@ import {
    userGetAllListSchema,
    userDeleteByIdSchema
 } from "../schemas/user"
-import { verifyUserAuth } from "../hooks/user-auth"
+
+import { 
+   verifyUserAuth 
+} from "../hooks/user-auth"
+
 
 
 const userRouters =  async (app: FastifyInstance) => {
-   // user authentication
-   app.post('/login',
-   {
+
+   app.post('/login',{
       schema: userBodyRequestLoginSchema
-   }, async (req: userBodyReguest): Promise<userLoginResponse> => {
-      try {
-         const {
-            username, 
-            password
-         } = req.body
-
-         const user = await app.pg.query('select * from users where username = $1', [username])
-         if(user.rowCount == 0) {
-            throw new Error(`Пользователь ${username} не найден!`)
-         }
-         
-         const comparePassword: boolean = await bcrypt.compare(password, user.rows[0].password)
-         if(!comparePassword){
-            throw new Error('Не верный пароль')
-         }
-         const token = app.jwt.sign({id: user.rows[0].id})
-         console.log(token)
-         return {
-            username: user.rows[0].username, 
-            token
-         }
-
-      } catch (error) {
-         return error
-      }
-   })
-   // create user
-   app.post('/create', 
-   {
+   }, userLogin)
+   
+   app.post('/', {
       preHandler: [verifyUserAuth],
       schema: userBodyRequestSchema,
-   }, 
-   async (req: userBodyReguest):Promise<userMessageResponse> => {
-      try {
-         const {
-            username, 
-            password
-         } = req.body
-         const user = await app.pg.query('select username from users where username = $1', [username])
-         if(user.rowCount > 0) {
-            throw new Error(`Пользователь ${username} уже существует!`)
-         }
-         const hashPassword: string = await bcrypt.hash(password, 5)
-         await app.pg.query('insert into users (username, password) values ($1, $2)', [username, hashPassword])
-         return {
-            message: `Пользователь ${username} успешно создан!`
-         }
-      } catch (error) {
-         return error
-      }
-   })
-   // get all user list
+   }, userCreate)
+   
    app.get<{Querystring: userGetAllListQuery}>('/',
    {
       preHandler: [verifyUserAuth],
       schema: userGetAllListSchema
-   },
-   async (req):Promise<Array<userGetAllListResponse>> => {
-      try {
-         let {limit, page} = req.query
-         limit = limit || 10
-         page = page || 1
-         let offset: number = page * limit - limit
-         const users = await app.pg.query('select id, username from users limit $1 offset $2', [limit, offset])
-         return users.rows
-      } catch (error) {
-         app.log.error(error)
-      }
-   })
-   app.get('/me', 
-   {
-      preHandler: verifyUserAuth
-   }, async (req) =>  {
-      try {
-         const {id}= req.user
-         const user = await app.pg.query('select * from users where id = $1', [id])
-         if(user.rowCount == 0) {
-            throw new Error('Произошла ошибка при получении данных пользователя!')
-         }
-         return {username: user.rows[0].username}
-      } catch (error) {
-         return error
-      }
-   })
-   app.put('/',
-   {
+   }, userGetAllList)
+
+   app.get('/me', {
+      preHandler: [verifyUserAuth]
+   }, userGetMe)
+
+   app.put('/',{
       preHandler: [verifyUserAuth],
       schema: userBodyRequestSchema
-   }, async (req: userBodyReguest): Promise<userMessageResponse> => {
-      try {
-         const {id, username, password} = req.body
-         const hashPassword = bcrypt.hash(password, 5)
-         await app.pg.query('update users set username = $1, password = $2 where id = $3', [username, hashPassword, id], (err) => {
-            if(err){
-               throw new Error('Ошибка при обновлении')
-            }
-         })
-         return {message: 'Данные успешно обновлены!'}
-      } catch (error) {
-         return error
-      }
-   })
+   }, userUpdate)
 
    app.delete<{Querystring: userQueryById}>('/:id', 
    {
       preHandler: [verifyUserAuth],
       schema:userDeleteByIdSchema
-   }, async (req):Promise<userMessageResponse> => {
-      try {
-         const {id} = req.query
-         await app.pg.query('delete from users where id = $1', [id], (err) => {
-            if(err) {
-               throw new Error('Ошибка при удалении!')
-            }
-         })
-         return {message: 'Пользовател успешно удален!'}
-      } catch (error) {
-         return error
-      }
-   })
+   }, userDelete)
+}
+
+   
+async function userLogin(req: userBodyReguest):Promise<userLoginResponse>  {
+   const {
+      username, 
+      password
+   } = req.body
+   return await this.userHandlers.userLogin(username, password)
+}
+
+async function userCreate(req: userBodyReguest):Promise<userMessageResponse> {
+   const {
+      username, 
+      password
+   } = req.body
+   return await this.userHandlers.userCreate(username, password)
+}
+
+async function userGetMe(req): Promise<userGetMe> {
+   const {id}= req.user
+   return await this.userHandlers.userGetMe(id)
+}
+
+async function userUpdate(req: userBodyReguest):Promise<userMessageResponse> {
+   const {id, username, password} = req.body
+   return await this.userHandlers.userUpdate(id, username, password)
+}
+
+async function userDelete(req):Promise<userMessageResponse> {
+   const {id} = req.query
+   return await this.userHandlers.userDelete(id)
+}
+
+async function userGetAllList(req):Promise<Array<userGetAllListResponse>> {
+   let {limit, page} = req.query
+   limit = limit || 10
+   page = page || 1
+   let offset: number = page * limit - limit
+   return await this.userHandlers.userGetAllList(limit, offset)
 }
 
 export default userRouters

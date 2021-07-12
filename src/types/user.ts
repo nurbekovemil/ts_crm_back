@@ -29,6 +29,11 @@ export interface userMessageResponse {
    message: string
 }
 
+export interface userGetMe {
+   user: {}
+   menus: any[]
+}
+
 export interface userQueryById {
    id: string
 }
