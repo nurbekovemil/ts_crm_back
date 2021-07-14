@@ -63,7 +63,7 @@ class UserHandlers {
          return {
             user:{
                username: user.rows[0].username,
-               role: user.rows[0].role
+               role: user.rows[0].user_role
             },
             menus:userMenu.rows
          }
