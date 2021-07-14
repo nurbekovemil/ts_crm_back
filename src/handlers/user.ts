@@ -11,7 +11,7 @@ class UserHandlers {
    async userLogin(username, password){
       const client = await this.db.connect()
       try {
-         const user = await client.query('select * from users where username = $1', [username])
+         const user = await client.query('select u.*, r.role as user_role from users u inner join roles r on r.id = u.role where u.username = $1', [username])
          if(user.rowCount == 0) {
             throw new Error(`Пользователь ${username} не найден!`)
          }
@@ -19,9 +19,15 @@ class UserHandlers {
          if(!comparePassword){
             throw new Error('Не верный пароль')
          }
+         const userMenu = await client.query('select * from menus where $1 = any(role) order by id asc', [user.rows[0].role])
+
          const token = await this.jwt.sign({id: user.rows[0].id})
          return {
-            username: user.rows[0].username, 
+            user: {
+               username: user.rows[0].username,
+               role: user.rows[0].user_role
+            },
+            menus: userMenu.rows, 
             token
          }
       } catch (error) {
@@ -49,11 +55,11 @@ class UserHandlers {
    async userGetMe (id) {
       const client = await this.db.connect()
       try {
-         const user = await client.query('select * from users where id = $1', [id])
+         const user = await client.query('select u.*, r.role as user_role from users u inner join roles r on r.id = u.role where u.id = $1', [id])
          if(user.rowCount == 0) {
             throw new Error('Произошла ошибка при получении данных пользователя!')
          }
-         const userMenu = await client.query('select * from menus where $1 = any(role)', [user.rows[0].role])
+         const userMenu = await client.query('select * from menus where $1 = any(role) order by id asc', [user.rows[0].role])
          return {
             user:{
                username: user.rows[0].username,

@@ -17,7 +17,6 @@ import {
    userBodyRequestLoginSchema, 
    userBodyRequestSchema,
    userGetAllListSchema,
-   userDeleteByIdSchema
 } from "../schemas/user"
 
 import { 
@@ -45,7 +44,7 @@ const userRouters =  async (app: FastifyInstance) => {
 
    app.get('/me', {
       preHandler: [verifyUserAuth]
-   }, userGetMe)
+   }, userGetMeH)
 
    app.put('/',{
       preHandler: [verifyUserAuth],
@@ -55,7 +54,6 @@ const userRouters =  async (app: FastifyInstance) => {
    app.delete<{Querystring: userQueryById}>('/:id', 
    {
       preHandler: [verifyUserAuth],
-      schema:userDeleteByIdSchema
    }, userDelete)
 }
 
@@ -76,7 +74,7 @@ async function userCreate(req: userBodyReguest):Promise<userMessageResponse> {
    return await this.userHandlers.userCreate(username, password)
 }
 
-async function userGetMe(req): Promise<userGetMe> {
+async function userGetMeH(req): Promise<userGetMe> {
    const {id}= req.user
    return await this.userHandlers.userGetMe(id)
 }

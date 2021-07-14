@@ -17,8 +17,19 @@ export const userBodyRequestLoginSchema = {
       200: {
          type: 'object',
          properties: {
-            username: {
-               type: 'string',
+            user: {
+               type: 'object',
+               properties: {
+                  username: {
+                     type: 'string'
+                  },
+                  role: {
+                     type: 'string'
+                  }
+               }
+            },
+            menus: {
+               type: 'array'
             },
             token: {
                type: 'string'
@@ -82,14 +93,6 @@ export const userBodyRequestSchema = {
 }
 
 export const userDeleteByIdSchema = {
-   query: {
-      type: 'string',
-      preoperties: {
-         id: {
-            type: 'string'
-         }
-      }
-   },
    response: {
       200: {
          type: 'object',

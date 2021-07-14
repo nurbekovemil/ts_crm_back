@@ -20,7 +20,8 @@ export interface userGetAllListResponse {
 } 
 
 export interface userLoginResponse {
-   username: string
+   user: {}
+   menus: []
    token: string
 }
 
