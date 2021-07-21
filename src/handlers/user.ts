@@ -36,7 +36,7 @@ class UserHandlers {
    }
 
    async userCreate(username, password){
-      const client = this.db.connect()
+      const client = await this.db.connect()
       try {
          const user = await client.query('select username from users where username = $1', [username])
          if(user.rowCount > 0) {
