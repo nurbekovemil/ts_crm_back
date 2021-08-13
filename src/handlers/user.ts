@@ -89,7 +89,7 @@ class UserHandlers {
    }
 
    async userDelete(id){
-      const client = this.db.connect()
+      const client = await this.db.connect()
       try {
          await client.query('delete from users where id = $1', [id], (err) => {
             if(err) {
