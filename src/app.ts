@@ -26,7 +26,6 @@ const buildApp = (opt: FastifyServerOptions) => {
       connectionString: `postgres://${user}:${password}@${host}/${database}`
    })
    app.register(fastifyCors)
-
    app.register(jwt, {
       secret: secretkey
    })

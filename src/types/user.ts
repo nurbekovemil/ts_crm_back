@@ -35,10 +35,6 @@ export interface userGetMe {
    menus: any[]
 }
 
-export interface userQueryById {
-   id: string
-}
-
 declare module "fastify-jwt" {
    interface FastifyJWT {
      payload: { 

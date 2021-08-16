@@ -9,7 +9,6 @@ import {
    userLoginResponse, 
    userMessageResponse,
    userGetMe,
-   userQueryById,
 } from "../types/user"
 
 // user route schemas
@@ -51,7 +50,7 @@ const userRouters =  async (app: FastifyInstance) => {
       schema: userBodyRequestSchema
    }, userUpdate)
 
-   app.delete<{Querystring: userQueryById}>('/:id', 
+   app.delete('/:id', 
    {
       preHandler: [verifyUserAuth],
    }, userDelete)
@@ -85,7 +84,7 @@ async function userUpdate(req: userBodyReguest):Promise<userMessageResponse> {
 }
 
 async function userDelete(req):Promise<userMessageResponse> {
-   const {id} = req.query
+   const {id} = req.params
    return await this.userHandlers.userDelete(id)
 }
 

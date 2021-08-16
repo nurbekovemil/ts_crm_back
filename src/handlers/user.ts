@@ -32,6 +32,8 @@ class UserHandlers {
          }
       } catch (error) {
          return error
+      } finally { 
+         client.release() 
       }
    }
 
@@ -43,12 +45,14 @@ class UserHandlers {
             throw new Error(`Пользователь ${username} уже существует!`)
          }
          const hashPassword: string = await bcrypt.hash(password, 5)
-         await client.query('insert into users (username, password) values ($1, $2)', [username, hashPassword])
+         await client.query('insert into users (username, password, role) values ($1, $2, $3)', [username, hashPassword, 2])
          return {
             message: `Пользователь ${username} успешно создан!`
          }
       } catch (error) {
          return error
+      } finally { 
+         client.release() 
       }
    }
 
@@ -69,11 +73,13 @@ class UserHandlers {
          }
       } catch (error) {
          return error
+      } finally { 
+         client.release() 
       }
    }
 
    async userUpdate(id, username, password){
-      const client = this.db.connect()
+      const client = await this.db.connect()
       try {
 
          const hashPassword = bcrypt.hash(password, 5)
@@ -85,20 +91,26 @@ class UserHandlers {
          return {message: 'Данные успешно обновлены!'}
       } catch (error) {
          return error
+      } finally { 
+         client.release() 
       }
    }
 
    async userDelete(id){
-      const client = this.db.connect()
+      const client = await this.db.connect()
       try {
          await client.query('delete from users where id = $1', [id], (err) => {
             if(err) {
                throw new Error('Ошибка при удалении!')
             }
          })
-         return {message: 'Пользовател успешно удален!'}
+         return {
+            message: 'Пользовател успешно удален!'
+         }
       } catch (error) {
          return error
+      } finally { 
+         client.release() 
       }
    }
 
@@ -109,6 +121,8 @@ class UserHandlers {
          return rows
       } catch (error) {
          return error
+      } finally { 
+         client.release() 
       }
    }
 
