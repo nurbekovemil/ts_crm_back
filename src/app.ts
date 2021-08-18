@@ -27,7 +27,10 @@ const buildApp = (opt: FastifyServerOptions) => {
    })
    app.register(fastifyCors)
    app.register(jwt, {
-      secret: secretkey
+      secret: secretkey,
+      sign: {
+         expiresIn: '9h'
+       },
    })
    app.register(userRouters, {
       prefix: '/users'
