@@ -29,7 +29,7 @@ const buildApp = (opt: FastifyServerOptions) => {
    app.register(jwt, {
       secret: secretkey,
       sign: {
-         expiresIn: '9h'
+         expiresIn: '4h'
        },
    })
    app.register(userRouters, {

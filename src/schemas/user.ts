@@ -67,7 +67,35 @@ export const userGetAllListSchema = {
    }
 }
 
-export const userBodyRequestSchema = {
+export const userBodyRequestUpdateSchema = {
+   body: {
+      type: 'object',
+      required: ['username'],
+      properties: {
+         id: {
+            type: 'number'
+         },
+         username: {
+            type: 'string'
+         },
+         password: {
+            type: 'string'
+         }
+      }
+   },
+   response: {
+      200: {
+         type: 'object',
+         properties: {
+            message: {
+               type: 'string'
+            }
+         }
+      }
+   }
+}
+
+export const userBodyReguestCreateSchema = {
    body: {
       type: 'object',
       required: ['username', 'password'],

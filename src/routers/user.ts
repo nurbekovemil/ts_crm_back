@@ -5,7 +5,8 @@ import * as bcrypt from 'bcrypt'
 import { 
    userGetAllListQuery, 
    userGetAllListResponse, 
-   userBodyReguest, 
+   userBodyReguest,
+   userUpdateReguest,
    userLoginResponse, 
    userMessageResponse,
    userGetMe,
@@ -14,7 +15,8 @@ import {
 // user route schemas
 import { 
    userBodyRequestLoginSchema, 
-   userBodyRequestSchema,
+   userBodyRequestUpdateSchema,
+   userBodyReguestCreateSchema,
    userGetAllListSchema,
 } from "../schemas/user"
 
@@ -32,7 +34,7 @@ const userRouters =  async (app: FastifyInstance) => {
    
    app.post('/', {
       preHandler: [verifyUserAuth],
-      schema: userBodyRequestSchema,
+      schema: userBodyReguestCreateSchema,
    }, userCreate)
    
    app.get<{Querystring: userGetAllListQuery}>('/',
@@ -47,7 +49,7 @@ const userRouters =  async (app: FastifyInstance) => {
 
    app.put('/',{
       preHandler: [verifyUserAuth],
-      schema: userBodyRequestSchema
+      schema: userBodyRequestUpdateSchema
    }, userUpdate)
 
    app.delete('/:id', 
@@ -78,7 +80,7 @@ async function userGetMeH(req): Promise<userGetMe> {
    return await this.userHandlers.userGetMe(id)
 }
 
-async function userUpdate(req: userBodyReguest):Promise<userMessageResponse> {
+async function userUpdate(req: userUpdateReguest):Promise<userMessageResponse> {
    const {id, username, password} = req.body
    return await this.userHandlers.userUpdate(id, username, password)
 }

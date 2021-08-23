@@ -5,7 +5,15 @@ export type userBodyReguest = FastifyRequest<{
    Body:{
       id?: number
       username: string
-      password: string
+      password?: string
+   }
+}>
+
+export type userUpdateReguest = FastifyRequest<{
+   Body: {
+      id?: number
+      username: string
+      password?: string
    }
 }>
 

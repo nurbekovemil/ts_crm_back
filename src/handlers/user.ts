@@ -81,8 +81,15 @@ class UserHandlers {
    async userUpdate(id, username, password){
       const client = await this.db.connect()
       try {
-
-         const hashPassword = bcrypt.hash(password, 5)
+         if(!password){
+            await client.query('update users set username = $1 where id = $2', [username, id], (err) => {
+               if(err){
+                  throw new Error('Ошибка при обновлении')
+               }
+            })
+            return {message: 'Данные успешно обновлены!'}
+         }
+         const hashPassword = await bcrypt.hash(password, 5)
          await client.query('update users set username = $1, password = $2 where id = $3', [username, hashPassword, id], (err) => {
             if(err){
                throw new Error('Ошибка при обновлении')
