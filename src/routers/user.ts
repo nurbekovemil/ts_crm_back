@@ -57,7 +57,7 @@ const userRouters =  async (app: FastifyInstance) => {
       preHandler: [verifyUserAuth],
    }, userDelete)
 }
-
+//////Для ревью 
    
 async function userLogin(req: userBodyReguest):Promise<userLoginResponse>  {
    const {
