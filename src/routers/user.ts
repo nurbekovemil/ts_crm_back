@@ -12,7 +12,7 @@ import {
    userGetMe,
 } from "../types/user"
 
-// user route schemas
+// user schemas
 import { 
    userBodyRequestLoginSchema, 
    userBodyRequestUpdateSchema,

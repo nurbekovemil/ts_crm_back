@@ -3,16 +3,20 @@ import fastifyPostgres from 'fastify-postgres'
 import fastifyCors from 'fastify-cors'
 import jwt from 'fastify-jwt'
 import fp from 'fastify-plugin'
+import config from './config'
 
+// user modules
 import userRouters from './routers/user'
 import UserHandlers from './handlers/user'
 
+// oder modules
+import orderRouters from './routers/order'
+import OrderHandlers from './handlers/order'
 
-
-import config from './config'
 
 const appInstance = (app, opt, done) => {
    app.decorate('userHandlers', new UserHandlers(app.pg, app.jwt))
+   app.decorate('orderHandlers', new OrderHandlers(app.pg, app.jwt))
    done()
 }
 
@@ -34,6 +38,9 @@ const buildApp = (opt: FastifyServerOptions) => {
    })
    app.register(userRouters, {
       prefix: '/users'
+   })
+   app.register(orderRouters, {
+      prefix: '/orders'
    })
 
    app.register(fp(appInstance))
