@@ -11,7 +11,8 @@ import {
 } from '../schemas/order'
 
 import { 
-    verifyUserAuth 
+    verifyUserAuth,
+    checkUserIsAdmin
  } from "../hooks/user-auth"
 
 const orderRouters = async (app: FastifyInstance) =>{
@@ -45,8 +46,21 @@ const orderRouters = async (app: FastifyInstance) =>{
 
     // Get all order list
     app.get('/', {
-
+        preHandler: [verifyUserAuth],
     }, getAllOrderList)
+
+    app.put('/status/', {
+        preHandler: [verifyUserAuth]
+    }, updateOrderStatus)
+}
+
+async function updateOrderStatus(req) {
+    try {
+        const {order_id, status} = req.body
+        return await this.orderHandlers.updateOrderStatus(order_id, status)
+    } catch (error) {
+        return error
+    }
 }
 
 async function createOrder(req: orderBodyReguest) {
@@ -87,12 +101,13 @@ async function getMyOrderList(req) {
 
 async function getOrderById(req) {
     const order_id = req.params.id
-    const user_id = req.user.id
-    return await this.orderHandlers.getOrderById(user_id, order_id)
+    const {id, role} = req.user
+    return await this.orderHandlers.getOrderById(id, order_id, role)
 }
 
-async function getAllOrderList() {
-    return await this.orderHandlers.getAllOrderList()
+async function getAllOrderList(req) {
+    const {id, role} = req.user
+    return await this.orderHandlers.getAllOrderList(role, id)
 }
 
 export default orderRouters
