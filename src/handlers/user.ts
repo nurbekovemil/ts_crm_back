@@ -1,4 +1,3 @@
-'use strict'
 import * as bcrypt from 'bcrypt'
 
 class UserHandlers {
