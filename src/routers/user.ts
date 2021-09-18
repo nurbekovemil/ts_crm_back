@@ -5,17 +5,18 @@ import * as bcrypt from 'bcrypt'
 import { 
    userGetAllListQuery, 
    userGetAllListResponse, 
-   userBodyReguest, 
+   userBodyReguest,
+   userUpdateReguest,
    userLoginResponse, 
    userMessageResponse,
    userGetMe,
-   userQueryById,
 } from "../types/user"
 
-// user route schemas
+// user schemas
 import { 
    userBodyRequestLoginSchema, 
-   userBodyRequestSchema,
+   userBodyRequestUpdateSchema,
+   userBodyReguestCreateSchema,
    userGetAllListSchema,
 } from "../schemas/user"
 
@@ -33,7 +34,7 @@ const userRouters =  async (app: FastifyInstance) => {
    
    app.post('/', {
       preHandler: [verifyUserAuth],
-      schema: userBodyRequestSchema,
+      schema: userBodyReguestCreateSchema,
    }, userCreate)
    
    app.get<{Querystring: userGetAllListQuery}>('/',
@@ -48,15 +49,15 @@ const userRouters =  async (app: FastifyInstance) => {
 
    app.put('/',{
       preHandler: [verifyUserAuth],
-      schema: userBodyRequestSchema
+      schema: userBodyRequestUpdateSchema
    }, userUpdate)
 
-   app.delete<{Querystring: userQueryById}>('/:id', 
+   app.delete('/:id', 
    {
       preHandler: [verifyUserAuth],
    }, userDelete)
 }
-
+//////Для ревью 
    
 async function userLogin(req: userBodyReguest):Promise<userLoginResponse>  {
    const {
@@ -79,13 +80,13 @@ async function userGetMeH(req): Promise<userGetMe> {
    return await this.userHandlers.userGetMe(id)
 }
 
-async function userUpdate(req: userBodyReguest):Promise<userMessageResponse> {
+async function userUpdate(req: userUpdateReguest):Promise<userMessageResponse> {
    const {id, username, password} = req.body
    return await this.userHandlers.userUpdate(id, username, password)
 }
 
 async function userDelete(req):Promise<userMessageResponse> {
-   const {id} = req.query
+   const {id} = req.params
    return await this.userHandlers.userDelete(id)
 }
 
