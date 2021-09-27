@@ -9,14 +9,19 @@ import config from './config'
 import userRouters from './routers/user'
 import UserHandlers from './handlers/user'
 
-// oder modules
+// order modules
 import orderRouters from './routers/order'
 import OrderHandlers from './handlers/order'
+
+// deal modules
+import dealRouters from './routers/deal'
+import DealHandlers from './handlers/deal'
 
 
 const appInstance = (app, opt, done) => {
    app.decorate('userHandlers', new UserHandlers(app.pg, app.jwt))
    app.decorate('orderHandlers', new OrderHandlers(app.pg, app.jwt))
+   app.decorate('dealHandlers', new DealHandlers(app.pg, app.jwt))
    done()
 }
 
@@ -41,6 +46,9 @@ const buildApp = (opt: FastifyServerOptions) => {
    })
    app.register(orderRouters, {
       prefix: '/orders'
+   })
+   app.register(dealRouters, {
+      prefix: '/deals'
    })
 
    app.register(fp(appInstance))

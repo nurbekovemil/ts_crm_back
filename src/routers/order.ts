@@ -11,58 +11,27 @@ import {
 } from '../schemas/order'
 
 import { 
-    verifyUserAuth,
-    checkUserIsAdmin
+    verifyUserAuth
  } from "../hooks/user-auth"
 
 const orderRouters = async (app: FastifyInstance) =>{
-    // Create order
-    app.post('/', {
-        preHandler: [verifyUserAuth],
-        schema: orderCreateSchema
-    }, createOrder)
+    // ******Order******
 
-    app.post('/offers', {
-        preHandler: [verifyUserAuth],
-    }, sendOfferOrder)
+    app.post('/', {preHandler: [verifyUserAuth],schema: orderCreateSchema}, createOrder) // Order create
+    
+    app.put('/:id', {}, updateOrderById) // update order by id
+    
+    app.get('/:type', {preHandler: [verifyUserAuth]}, getMyOrderList) // Get own orders by type 
 
-    app.get('/offers', {
-        preHandler: [verifyUserAuth],
-    }, getOffers)
+    app.get('/by/:id', {preHandler: [verifyUserAuth]}, getOrderById) // Get order by id
 
-    app.put('/:id', {
+    app.get('/', {preHandler: [verifyUserAuth]}, getAllOrderList) // Get all order list
 
-    }, updateOrder)
+    app.put('/status/', {preHandler: [verifyUserAuth]}, updateOrderStatus)
 
-    // Get own orders by type 
-    app.get('/:type', {
-        preHandler: [verifyUserAuth],
-    }, getMyOrderList)
-
-    // Get order by id
-    app.get('/by/:id', {
-        preHandler: [verifyUserAuth],
-    }, getOrderById)
-
-    // Get all order list
-    app.get('/', {
-        preHandler: [verifyUserAuth],
-    }, getAllOrderList)
-
-    app.put('/status/', {
-        preHandler: [verifyUserAuth]
-    }, updateOrderStatus)
 }
 
-async function updateOrderStatus(req) {
-    try {
-        const {order_id, status} = req.body
-        return await this.orderHandlers.updateOrderStatus(order_id, status)
-    } catch (error) {
-        return error
-    }
-}
-
+// ******Order handlers*******
 async function createOrder(req: orderBodyReguest) {
     const {
         order_type,
@@ -73,41 +42,36 @@ async function createOrder(req: orderBodyReguest) {
     } = req.body
     return await this.orderHandlers.createOrder(order_type, title, price, amount, cost, req.user.id)
 }
-
-async function sendOfferOrder(req) {
-    const {
-        user_to,
-        order_from,
-        order_to
-    } = req.body
-    const {id} = req.user
-    return await this.orderHandlers.sendOfferOrder(id, user_to, order_from, order_to)
-}
-
-async function getOffers(req) {
-    const {id} = req.user
-    return await this.orderHandlers.getOffers(id)
-}
-
-async function updateOrder() {
+async function updateOrderById() {
     
 }
-
 async function getMyOrderList(req) {
     const {type} = req.params
     const {id} = req.user
     return await this.orderHandlers.getMyOrderList(type, id)
 }
-
 async function getOrderById(req) {
     const order_id = req.params.id
     const {id, role} = req.user
     return await this.orderHandlers.getOrderById(id, order_id, role)
 }
-
 async function getAllOrderList(req) {
     const {id, role} = req.user
     return await this.orderHandlers.getAllOrderList(role, id)
 }
+async function updateOrderStatus(req) {
+    try {
+        const {order_id, status} = req.body
+        return await this.orderHandlers.updateOrderStatus(order_id, status)
+    } catch (error) {
+        return error
+    }
+}
+
+
+
+
+
+
 
 export default orderRouters
