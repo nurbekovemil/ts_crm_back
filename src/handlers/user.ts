@@ -1,4 +1,3 @@
-'use strict'
 import * as bcrypt from 'bcrypt'
 
 class UserHandlers {
@@ -21,7 +20,7 @@ class UserHandlers {
          }
          const userMenu = await client.query('select * from menus where $1 = any(role) order by id asc', [user.rows[0].role])
 
-         const token = await this.jwt.sign({id: user.rows[0].id})
+         const token = await this.jwt.sign({id: user.rows[0].id, role: user.rows[0].user_role})
          return {
             user: {
                username: user.rows[0].username,
@@ -59,7 +58,13 @@ class UserHandlers {
    async userGetMe (id) {
       const client = await this.db.connect()
       try {
-         const user = await client.query('select u.*, r.role as user_role from users u inner join roles r on r.id = u.role where u.id = $1', [id])
+         const user = await client.query(`
+            select 
+               u.*, r.role as user_role 
+            from users u 
+            inner join roles r 
+            on r.id = u.role 
+            where u.id = $1`, [id])
          if(user.rowCount == 0) {
             throw new Error('Произошла ошибка при получении данных пользователя!')
          }
