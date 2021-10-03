@@ -35,10 +35,11 @@ class DealHandlers {
          user_from, user_to, order_from, order_to, deals.id,
          to_char("created_at", 'DD.MM.YYYY') as created_at,
          status,
-         deal_status.title as status_title
+         deal_status.title as status_title,
+         deal_status.color as status_color
          from deals 
          inner join deal_status on status = deal_status.id
-         where ${status == 2 ? 'status = 2 or status = 4':'status = 1 or status = 3'} and (user_from = $1 or user_to = $1)
+         where ${status == 2 ? '(status = 2 or status = 4)':'(status = 1 or status = 3)'} and (user_from = $1 or user_to = $1)
          order by created_at desc
          `, [user_id])
          return rows
@@ -49,17 +50,30 @@ class DealHandlers {
       }
    }
    
-   async getDealById(offer_id){
+   async getDealById(deal_id, user_id){
       const client = await this.db.connect()
       try {
-         const orders = await client.query(`
+         const deal = await client.query(`
             select 
-            orders.* 
+            d.*, 
+            ds.title as status_title, 
+            ds.color as status_color,
+            case when d.user_from = $2 then true else false end as own
+            from deals d 
+            inner join deal_status ds 
+            on ds.id = d.status 
+            where d.id = $1`, [deal_id, user_id])
+         const orders = await client.query(`
+            select
+            orders.*
             from orders 
             inner join deals d
             on d.id = $1 
-            where orders.id = d.order_from or orders.id = d.order_to`, [offer_id])
-         return orders.rows
+            where orders.id = d.order_from or orders.id = d.order_to order by orders.created_at desc`, [deal_id])
+         return {
+            orders: orders.rows,
+            deal: deal.rows[0]
+         }
       } catch (error) {
          return error
       } finally {
@@ -67,13 +81,15 @@ class DealHandlers {
       }
    }
 
-   async updateDealStatus(status, offer_id){
+   async updateDealStatus(status, deal_id){
       const client = await this.db.connect()
       try {
+         await client.query('update deals set status = $1 where id = $2', [status, deal_id])
          return {
-            message: 'Предложение принято!'
+            message: status == 2 || status == 1 ? 'Предложение принято!' : 'Предложение отклонен!'
          }
       } catch (error) {
+
          return error
       } finally{
          client.release()
