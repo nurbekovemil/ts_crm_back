@@ -1,10 +1,15 @@
 import { FastifyRequest} from "fastify"
 
-export type orderBodyReguest = FastifyRequest<{
+export type createOrderReguest = FastifyRequest<{
    Body:{
-      order_type: number
+      type: number 
+      payment: number 
+      delivery: number
+      weight: number 
+      category: number
+      description: string
       title: string
-      price: number
+      price: number 
       amount: number
       cost: number
    }

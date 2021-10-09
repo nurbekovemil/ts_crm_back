@@ -1,15 +1,5 @@
 import { FastifyInstance } from "fastify"
 
-// user types
-import {
-    orderBodyReguest
-} from '../types/order'
-
-// user schemas
-import {
-    orderCreateSchema
-} from '../schemas/order'
-
 import { 
     verifyUserAuth
  } from "../hooks/user-auth"

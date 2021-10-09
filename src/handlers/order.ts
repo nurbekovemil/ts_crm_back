@@ -1,5 +1,4 @@
-"use strict";
-import * as bcrypt from "bcrypt";
+'use strict'
 
 class OrderHandlers {
 	constructor(readonly db, readonly jwt) {
@@ -7,12 +6,14 @@ class OrderHandlers {
 		this.jwt = jwt;
 	}
 
-	async createOrder(order_type, title, price, amount, cost, user_id) {
+	async createOrder(type, payment, delivery, weight, category, description, title, price, amount, cost, user_id) {
 		const client = await this.db.connect();
 		try {
 			await client.query(
-				`insert into orders (order_type, title, status, price, amount, cost,  user_id) values ($1, $2, $3, $4, $5, $6, $7)`,
-				[order_type, title, 1, price, amount, cost, user_id]
+				` insert into orders (order_type, payment, delivery, weight, category, description, title, price, amount, cost, status, user_id) 
+					values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+				`,
+				[type, payment, delivery, weight, category, description, title, price, amount, cost, 1, user_id]
 			);
 			return {
 				message: "Заявка успешно создано!",
@@ -49,12 +50,11 @@ class OrderHandlers {
 		}
 	}
 
-	async getOrderById(user_id, order_id, role) {
+	async getOrderByIdPrivate(user_id, order_id, role) {
 		const client = await this.db.connect();
 		try {
 			const { rows } = await client.query(
-				`
-            select 
+				`select 
                o.*, 
                to_char("created_at", 'DD.MM.YYYY') as created_at,
                ot.title as order_type_title,
@@ -77,6 +77,32 @@ class OrderHandlers {
 		}
 	}
 
+	async getOrderByIdPublic(id) {
+		const client = await this.db.connect();
+		try {
+			const { rows } = await client.query(
+				`select 
+               o.*, 
+               to_char("created_at", 'DD.MM.YYYY') as created_at,
+               ot.title as order_type_title,
+               os.title as status_title,
+               os.color as status_color
+               from orders as o
+               inner join order_types as ot
+               on o.order_type = ot.id 
+               inner join order_status as os
+               on o.status = os.id
+               where o.id = $1`,
+				[id]
+			);
+			return rows[0];
+		} catch (error) {
+			return error;
+		} finally {
+			client.release();
+		}
+	}
+	
 	async getAllOrderList(role, id) {
 		const client = await this.db.connect();
 		try {
@@ -101,6 +127,65 @@ class OrderHandlers {
          where ${role == "ADMIN" ? " o.status = 1 or o.status = 2": "o.status = 2"}
          order by o.status = 1 desc, o.created_at desc`;
 			const { rows } = await client.query(queryString, [id]);
+			return rows;
+		} catch (error) {
+			return error;
+		} finally {
+			client.release();
+		}
+	}
+
+	async getTemplates(id){
+		const client = await this.db.connect();
+		try {
+			const {rows} = await client.query(`
+			select
+				o_f.*,
+				json_agg(o_c.*) as order_categories,
+				json_agg(o_t.*) as order_types,
+				json_agg(o_d.*) as order_deliveries,
+				json_agg(o_p.*) as order_payments,
+				json_agg(o_w.*) as order_weights
+			from order_fields o_f
+			cross join order_categories o_c
+			cross join order_types o_t
+			cross join order_deliveries o_d
+			cross join order_payments o_p
+			cross join order_weights o_w
+			where o_f.id = $1
+			group by o_f.id
+			`, [id])
+			return rows[0]
+		} catch (error) {
+			return error
+		} finally {
+			client.release()
+		}
+	}
+
+	async getOrderListHomePage(type) {
+		const client = await this.db.connect();
+		try {
+			let queryString = `
+         select 
+            o.id,
+            o.title,
+            to_char(o.created_at, 'DD.MM.YYYY') as created_at,
+            o.status as status_code,
+            o.price,
+            o.amount,
+            o.cost,
+            os.title as status,
+            os.color as status_color,
+            ot.title as order_type
+         from orders as o 
+         inner join order_status as os 
+         on os.id = o.status
+         inner join order_types as ot
+         on o.order_type = ot.id 
+         where o.status = 2 and o.order_type = $1
+         order by o.status = 1 desc, o.created_at desc`;
+			const { rows } = await client.query(queryString, [type]);
 			return rows;
 		} catch (error) {
 			return error;
