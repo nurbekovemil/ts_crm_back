@@ -53,6 +53,26 @@ class DealHandlers {
    async getDealById(deal_id, user_id){
       const client = await this.db.connect()
       try {
+         // const {rows} = await client.query(`
+         // select 
+         //    d.*,
+         //    json_agg(o_f.*) as order_from_arr,
+         //    json_agg(o_t.*) as order_to_arr,
+         //    ds.title as status_title,
+         //    ds.color as status_color,
+         //    case when d.user_from = $2 then true else false end as own
+         // from deals d 
+         //    inner join deal_status ds 
+         //    on ds.id = d.status 
+         //    inner join orders o_f
+         //    on d.order_from = o_f.id
+         //    inner join orders o_t
+         //    on d.order_to = o_t.id
+         // where d.id = $1
+         //    group by d.id,
+         //    ds.title,
+         //    ds.color
+         // `, [deal_id, user_id])
          const deal = await client.query(`
             select 
             d.*, 
@@ -65,14 +85,31 @@ class DealHandlers {
             where d.id = $1`, [deal_id, user_id])
          const orders = await client.query(`
             select
-            orders.*
+            orders.*,
+            o_t.title as order_type,
+            o_c.title as category,
+            o_d.title as delivery,
+            o_p.title as payment,
+            o_w.title as weight,
+            case when orders.user_id = $2 then true else false end as own
             from orders 
+            inner join order_types o_t
+            on orders.order_type = o_t.id
             inner join deals d
-            on d.id = $1 
-            where orders.id = d.order_from or orders.id = d.order_to order by orders.created_at desc`, [deal_id])
+            on d.id = $1
+            inner join order_categories o_c
+            on orders.category = o_c.id
+            inner join order_deliveries o_d
+            on orders.delivery = o_d.id
+            inner join order_payments o_p
+            on orders.payment = o_p.id
+            inner join order_weights o_w
+            on orders.weight = o_w.id
+            where orders.id = d.order_from or orders.id = d.order_to 
+            order by orders.created_at desc`, [deal_id, user_id])
          return {
-            orders: orders.rows,
-            deal: deal.rows[0]
+            orders:orders.rows,
+            deal:deal.rows[0]
          }
       } catch (error) {
          return error

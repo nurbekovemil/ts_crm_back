@@ -51,6 +51,7 @@ async function getOrderByIdPublic(req) {
 // ******Order handlers*******
 async function createOrder(req: createOrderReguest) {
 	const {type, payment, delivery, weight, category, description, title, price, amount, cost} = req.body
+	console.log(req.body)
 	return await this.orderHandlers.createOrder(type, payment, delivery, weight, category, description, title, price, amount, cost, req.user.id)
 }
 async function updateOrderById() {}

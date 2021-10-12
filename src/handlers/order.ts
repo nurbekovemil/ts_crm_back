@@ -60,12 +60,23 @@ class OrderHandlers {
                ot.title as order_type_title,
                case when o.user_id = $1 or $3 = 'ADMIN' then true else false end as own,
                os.title as status_title,
-               os.color as status_color
+							 oc.title as category,
+							 od.title as delivery,
+							 op.title as payment,
+							 ow.title as weight
                from orders as o
                inner join order_types as ot
                on o.order_type = ot.id 
                inner join order_status as os
                on o.status = os.id
+							 inner join order_categories as oc
+               on o.category = oc.id
+							 inner join order_deliveries as od
+               on o.delivery = od.id
+							 inner join order_payments as op
+               on o.payment = op.id
+							 inner join order_weights as ow
+               on o.weight = ow.id
                where o.id = $2`,
 				[user_id, order_id, role]
 			);
@@ -86,12 +97,23 @@ class OrderHandlers {
                to_char("created_at", 'DD.MM.YYYY') as created_at,
                ot.title as order_type_title,
                os.title as status_title,
-               os.color as status_color
+							 oc.title as category,
+							 od.title as delivery,
+							 op.title as payment,
+							 ow.title as weight
                from orders as o
                inner join order_types as ot
                on o.order_type = ot.id 
                inner join order_status as os
                on o.status = os.id
+							 inner join order_categories as oc
+               on o.category = oc.id
+							 inner join order_deliveries as od
+               on o.delivery = od.id
+							 inner join order_payments as op
+               on o.payment = op.id
+							 inner join order_weights as ow
+               on o.weight = ow.id
                where o.id = $1`,
 				[id]
 			);
