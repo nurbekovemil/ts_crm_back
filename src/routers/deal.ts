@@ -9,15 +9,14 @@ const dealRouters = async (app: FastifyInstance) =>{
     // ******Deals******
     app.post('/', {preHandler: [verifyUserAuth]}, createDeal) // Create deal
 
-    app.get('/:status', {preHandler: [verifyUserAuth]}, getDeals) // Get all deals by status
+    app.get('/', {preHandler: [verifyUserAuth]}, getDeals) // Get all deals by status
     
-    app.get('/by/:id', {preHandler:[verifyUserAuth]}, getDealById) // Get deal by id
+    app.get('/:id', {preHandler:[verifyUserAuth]}, getDealById) // Get deal by id
+
+    app.get('/order/', {preHandler:[verifyUserAuth]}, getDealOrders) // Get orders of deals
     
     app.put('/', {preHandler: [verifyUserAuth]}, updateDealStatus) //  update deal status
-
-    // app.get('/deals', {preHandler: [verifyUserAuth]}, getMyDeals)
 }
-
 
 // ******deal handlers******
 async function createDeal(req) {
@@ -31,7 +30,7 @@ async function createDeal(req) {
 }
 async function getDeals(req) {
     const {id} = req.user
-    const {status} = req.params
+    const {status} = req.query
     return await this.dealHandlers.getDeals(id, status)
 }
 
@@ -43,6 +42,12 @@ async function getDealById(req) {
     return await this.dealHandlers.getDealById(deal_id, user_id)
 }
 
+async function getDealOrders(req) {
+    const {order_from, order_to} = req.query
+    console.log('***************',order_from, order_to)
+    return await this.dealHandlers.getDealOrders(order_from, order_to)
+}
+
 async function updateDealStatus(req) {
     const {
         status, 
@@ -50,11 +55,5 @@ async function updateDealStatus(req) {
     } = req.body
     return await this.dealHandlers.updateDealStatus(status, deal_id)
 }
-
-
-
-
-
-
 
 export default dealRouters

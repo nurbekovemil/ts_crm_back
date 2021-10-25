@@ -6,14 +6,14 @@ class OrderHandlers {
 		this.jwt = jwt;
 	}
 
-	async createOrder(type, payment, delivery, weight, category, description, title, price, amount, cost, user_id) {
+	async createOrder({type, payment, delivery, weight, category, description, title, price, amount, cost}, {id}) {
 		const client = await this.db.connect();
 		try {
 			await client.query(
 				` insert into orders (order_type, payment, delivery, weight, category, description, title, price, amount, cost, status, user_id) 
 					values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 				`,
-				[type, payment, delivery, weight, category, description, title, price, amount, cost, 1, user_id]
+				[type, payment, delivery, weight, category, description, title, price, amount, cost, 1, id]
 			);
 			return {
 				message: "Заявка успешно создано!",
@@ -61,6 +61,7 @@ class OrderHandlers {
                case when o.user_id = $1 or $3 = 'ADMIN' then true else false end as own,
                os.title as status_title,
 							 oc.title as category,
+							 oc.id as category_id,
 							 od.title as delivery,
 							 op.title as payment,
 							 ow.title as weight
@@ -98,6 +99,7 @@ class OrderHandlers {
                ot.title as order_type_title,
                os.title as status_title,
 							 oc.title as category,
+							 oc.id as category_id,
 							 od.title as delivery,
 							 op.title as payment,
 							 ow.title as weight
@@ -157,27 +159,11 @@ class OrderHandlers {
 		}
 	}
 
-	async getTemplates(id){
+	async getOptions(option){
 		const client = await this.db.connect();
 		try {
-			const {rows} = await client.query(`
-			select
-				o_f.*,
-				json_agg(o_c.*) as order_categories,
-				json_agg(o_t.*) as order_types,
-				json_agg(o_d.*) as order_deliveries,
-				json_agg(o_p.*) as order_payments,
-				json_agg(o_w.*) as order_weights
-			from order_fields o_f
-			cross join order_categories o_c
-			cross join order_types o_t
-			cross join order_deliveries o_d
-			cross join order_payments o_p
-			cross join order_weights o_w
-			where o_f.id = $1
-			group by o_f.id
-			`, [id])
-			return rows[0]
+			const {rows} = await client.query(`select * from ${option}`)
+			return rows
 		} catch (error) {
 			return error
 		} finally {
