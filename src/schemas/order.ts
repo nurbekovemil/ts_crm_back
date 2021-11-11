@@ -33,6 +33,9 @@ export const createOrderSchema = {
 				message: {
 					type: "string",
 				},
+				id: {
+					type: "number"
+				}
 			},
 		},
 	},

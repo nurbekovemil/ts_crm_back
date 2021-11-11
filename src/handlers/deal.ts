@@ -83,11 +83,41 @@ class DealHandlers {
       }
    }
 
-   async getDealOrders(order_from, order_to) {
+   async getDealOrders(order_from, order_to, user_id) {
       const client = await this.db.connect()
       try {
-         let queryString = order_to ? `id = ${order_from} or id = ${order_to}` : `id = ${order_from}`
-         const {rows} = await client.query(`select * from orders where ${queryString}`)
+         let queryString = order_to ? `o.id = ${order_from} or o.id = ${order_to}` : `o.id = ${order_from}`
+         const {rows} = await client.query(`
+         select 
+         o.* ,
+            to_char(o.created_at, 'DD.MM.YYYY') as created_at,
+            case when o.user_id = $1 then true else false end as own,
+            ot.title as order_type_title,
+      
+                   os.title as status_title,
+                   oc.title as category,
+
+                   od.title as delivery,
+                   
+                   op.title as payment,
+                   
+                   ow.title as weight
+                   
+            from orders as o
+                     inner join order_types as ot
+                     on o.order_type = ot.id 
+                     inner join order_status as os
+                     on o.status = os.id
+                     inner join order_categories as oc
+                     on o.category = oc.id
+                     inner join order_deliveries as od
+                     on o.delivery = od.id
+                     inner join order_payments as op
+                     on o.payment = op.id
+                     inner join order_weights as ow
+                     on o.weight = ow.id 
+            where ${queryString}
+            `, [user_id])
          return rows
       } catch (error) {
          return error

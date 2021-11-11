@@ -6,18 +6,18 @@ class OrderHandlers {
 		this.jwt = jwt;
 	}
 
-	async createOrder({type, payment, delivery, weight, category, description, title, price, amount, cost}, {id}) {
+	async createOrder({type, payment, delivery, weight, category, description, title, price, amount, cost},{id},files) {
 		const client = await this.db.connect();
 		try {
-			await client.query(
-				` insert into orders (order_type, payment, delivery, weight, category, description, title, price, amount, cost, status, user_id) 
-					values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+			const file = await files.map(item => `${process.env.host}/${item.destination}/${item.filename}`)
+			const {rows} = await client.query(
+				` insert into orders (order_type, payment, delivery, weight, category, description, title, price, amount, cost, status, user_id, images) 
+					values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id
 				`,
-				[type, payment, delivery, weight, category, description, title, price, amount, cost, 1, id]
+				[type, payment, delivery, weight, category, description, title, price, amount, cost, 1, id, file]
 			);
-			return {
-				message: "Заявка успешно создано!",
-			};
+			return rows[0].id
+				
 		} catch (error) {
 			return error;
 		} finally {
@@ -55,33 +55,41 @@ class OrderHandlers {
 		try {
 			const { rows } = await client.query(
 				`select 
-               o.*, 
-               to_char("created_at", 'DD.MM.YYYY') as created_at,
-               ot.title as order_type_title,
+				o.* ,
+               to_char(o.created_at, 'DD.MM.YYYY') as created_at,
                case when o.user_id = $1 or $3 = 'ADMIN' then true else false end as own,
-               os.title as status_title,
+               ot.title as order_type_title,
+               
+							 os.title as status_title,
 							 oc.title as category,
 							 oc.id as category_id,
+
 							 od.title as delivery,
+							 od.id as delivery_id,
+							 
 							 op.title as payment,
-							 ow.title as weight
+							 op.id as payment_id,
+							 
+							 ow.title as weight,
+							 ow.id as weight_id
+							 
                from orders as o
-               inner join order_types as ot
-               on o.order_type = ot.id 
-               inner join order_status as os
-               on o.status = os.id
-							 inner join order_categories as oc
-               on o.category = oc.id
-							 inner join order_deliveries as od
-               on o.delivery = od.id
-							 inner join order_payments as op
-               on o.payment = op.id
-							 inner join order_weights as ow
-               on o.weight = ow.id
+								inner join order_types as ot
+								on o.order_type = ot.id 
+								inner join order_status as os
+								on o.status = os.id
+								inner join order_categories as oc
+								on o.category = oc.id
+								inner join order_deliveries as od
+								on o.delivery = od.id
+								inner join order_payments as op
+								on o.payment = op.id
+								inner join order_weights as ow
+								on o.weight = ow.id
                where o.id = $2`,
 				[user_id, order_id, role]
 			);
-			return rows[0];
+			return rows
 		} catch (error) {
 			return error;
 		} finally {
@@ -183,6 +191,7 @@ class OrderHandlers {
             o.price,
             o.amount,
             o.cost,
+						o.images[1],
             os.title as status,
             os.color as status_color,
             ot.title as order_type

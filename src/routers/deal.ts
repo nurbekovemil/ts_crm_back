@@ -44,8 +44,8 @@ async function getDealById(req) {
 
 async function getDealOrders(req) {
     const {order_from, order_to} = req.query
-    console.log('***************',order_from, order_to)
-    return await this.dealHandlers.getDealOrders(order_from, order_to)
+    const user_id = req.user.id
+    return await this.dealHandlers.getDealOrders(order_from, order_to, user_id)
 }
 
 async function updateDealStatus(req) {
