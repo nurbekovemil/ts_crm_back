@@ -20,6 +20,10 @@ import OrderHandlers from './handlers/order'
 import dealRouters from './routers/deal'
 import DealHandlers from './handlers/deal'
 
+// catalog modules
+
+import catalogRouters from './routers/catalog'
+import CatalogHandlers from './handlers/catalog'
 
 const appInstance = (app, opt, done) => {
    const storage = multer.diskStorage({
@@ -45,6 +49,7 @@ const appInstance = (app, opt, done) => {
    app.decorate('userHandlers', new UserHandlers(app.pg, app.jwt))
    app.decorate('orderHandlers', new OrderHandlers(app.pg, app.jwt))
    app.decorate('dealHandlers', new DealHandlers(app.pg, app.jwt))
+   app.decorate('catalogHandlers', new CatalogHandlers(app.pg))
    done()
 }
 
@@ -74,6 +79,10 @@ const buildApp = (opt: FastifyServerOptions) => {
    })
    app.register(dealRouters, {
       prefix: '/deals'
+   })
+
+   app.register(catalogRouters, {
+      prefix: '/catalog'
    })
 
    app.register(fastifyStatic, {
