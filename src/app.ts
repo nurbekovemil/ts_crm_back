@@ -90,6 +90,9 @@ const buildApp = (opt: FastifyServerOptions) => {
       prefix: '/static/',
       index: false,
    })
+   app.get('/', function (req, reply) {
+      reply.sendFile('index.html', path.join(__dirname, '..','..','client','dist')) // serving a file from a different root location
+   })
    
    module.exports[Symbol.for('plugin-meta')] = {
       decorators: {
