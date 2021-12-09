@@ -1,6 +1,6 @@
 import { FastifyServerOptions } from "fastify";
-import buildApp from "./src/app";
-import config from "./src/config";
+import buildApp from "./app";
+import config from "./config";
 
 
 const options: FastifyServerOptions = {
