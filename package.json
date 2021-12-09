@@ -2,11 +2,11 @@
   "name": "ts_kse_backend",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/index.js",
-  "types": "index.d.ts",
+  "main": "dist/app.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "start": "tsc && node dist/app.js",
+    "start": "node dist/app.js",
     "dev": "nodemon index.ts"
   },
   "keywords": [],
