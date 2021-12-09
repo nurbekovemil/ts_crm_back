@@ -62,7 +62,18 @@ const buildApp = (opt: FastifyServerOptions) => {
    app.register(fastifyPostgres, {
       connectionString: `postgres://${user}:${password}@${host}/${database}`
    })
-   app.register(fastifyCors)
+   app.register(fastifyCors, {
+      origin: 'https://ts.kse.kg/',
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+      preflightContinue: false,
+      optionsSuccessStatus: 204,
+      credentials: false,
+      exposedHeaders: null,
+      allowedHeaders: null,
+      maxAge: null,
+      preflight: true,
+      strictPreflight: true
+   })
    app.register(jwt, {
       secret: secretkey,
       sign: {

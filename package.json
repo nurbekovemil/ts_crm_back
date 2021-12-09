@@ -6,7 +6,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/app.js",
+    "start": "ts && node dist/app.js",
     "dev": "nodemon index.ts"
   },
   "keywords": [],
