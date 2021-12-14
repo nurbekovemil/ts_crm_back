@@ -13,7 +13,7 @@ const dealRouters = async (app: FastifyInstance) =>{
     
     app.get('/:id', {preHandler:[verifyUserAuth]}, getDealById) // Get deal by id
 
-    app.get('/order/', {preHandler:[verifyUserAuth]}, getDealOrders) // Get orders of deals
+    app.get('/order/:id', {preHandler:[verifyUserAuth]}, getDealOrders) // Get orders of deals
     
     app.put('/', {preHandler: [verifyUserAuth]}, updateDealStatus) //  update deal status
 }
@@ -43,9 +43,9 @@ async function getDealById(req) {
 }
 
 async function getDealOrders(req) {
-    const {order_from, order_to} = req.query
+    const deal_id = req.params.id
     const user_id = req.user.id
-    return await this.dealHandlers.getDealOrders(order_from, order_to, user_id)
+    return await this.dealHandlers.getDealOrders(deal_id, user_id)
 }
 
 async function updateDealStatus(req) {

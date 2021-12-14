@@ -12,11 +12,11 @@ class OrderHandlers {
 			const file = await files.map(item => `${process.env.host}/${item.destination}/${item.filename}`)
 			const {rows} = await client.query(
 				` insert into orders (order_type, payment, delivery, weight, category, description, title, price, amount, cost, status, user_id, images) 
-					values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id
+					values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id, order_type
 				`,
 				[type, payment, delivery, weight, category, description, title, price, amount, cost, 1, id, file]
 			);
-			return rows[0].id
+			return rows[0]
 				
 		} catch (error) {
 			return error;
@@ -57,7 +57,7 @@ class OrderHandlers {
 				`select 
 				o.* ,
                to_char(o.created_at, 'DD.MM.YYYY') as created_at,
-               case when o.user_id = $1 or $3 = 'ADMIN' then true else false end as own,
+               case when o.user_id = $1 or $3 != 'ADMIN' then true else false end as own,
                ot.title as order_type_title,
                
 							 os.title as status_title,

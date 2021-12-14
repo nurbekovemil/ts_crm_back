@@ -63,7 +63,8 @@ const buildApp = (opt: FastifyServerOptions) => {
       connectionString: `postgres://${user}:${password}@${host}/${database}`
    })
    app.register(fastifyCors, {
-      origin: 'https://ts.kse.kg/',
+      // origin: 'https://ts.kse.kg/',
+      origin: 'http://localhost:8080',
       methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
       preflightContinue: false,
       optionsSuccessStatus: 204,
