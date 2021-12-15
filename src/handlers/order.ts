@@ -57,7 +57,7 @@ class OrderHandlers {
 				`select 
 				o.* ,
                to_char(o.created_at, 'DD.MM.YYYY') as created_at,
-               case when o.user_id = $1 or $3 != 'ADMIN' then true else false end as own,
+               case when o.user_id = $1 then true else false end as own,
                ot.title as order_type_title,
                
 							 os.title as status_title,
@@ -87,7 +87,7 @@ class OrderHandlers {
 								inner join order_weights as ow
 								on o.weight = ow.id
                where o.id = $2`,
-				[user_id, order_id, role]
+				[user_id, order_id]
 			);
 			return rows
 		} catch (error) {
