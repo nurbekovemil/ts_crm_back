@@ -54,7 +54,8 @@ async function getOrderByIdPublic(req) {
 
 // ******Order handlers*******
 async function createOrder(req: createOrderReguest, reply) {
-	const rows = await this.orderHandlers.createOrder(req.body, req.user, req.files)
+	const rows = await this.orderHandlers.createOrder(req.body, req.user)
+	await this.orderHandlers.createImage(req.files, rows.id)
 	reply.send({
 		rows,
 		message: 'Order successfully created!'
