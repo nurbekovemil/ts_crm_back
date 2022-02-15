@@ -118,7 +118,8 @@ where d.id = $1
          oc.title as category,
          od.title as delivery,
          op.title as payment,
-         ow.title as weight
+         ow.title as weight,
+				 jsonb_agg(img.*) as images
          from deals d
          inner join orders o on d.order_from = o.id or d.order_to = o.id
          inner join order_types as ot on o.order_type = ot.id 
@@ -127,7 +128,17 @@ where d.id = $1
          inner join order_deliveries as od on o.delivery = od.id
          inner join order_payments as op on o.payment = op.id
          inner join order_weights as ow on o.weight = ow.id 
-         where d.id = $1`,
+				 inner join path_images as img on o.id = img.order_id
+         where d.id = $1
+				 group by 
+				 o.id,
+				 ot.title,
+         os.title,
+         oc.title,
+         od.title,
+         op.title,
+         ow.title
+				 `,
 				[deal_id, user_id]
 			);
 			return rows;

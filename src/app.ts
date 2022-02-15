@@ -64,7 +64,7 @@ const buildApp = (opt: FastifyServerOptions) => {
    })
    app.register(fastifyCors, {
       origin: 'http://ts.kse.kg',
-      // origin: 'http://localhost:8080',
+      //origin: 'http://localhost:8080',
       methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
       preflightContinue: false,
       optionsSuccessStatus: 204,
