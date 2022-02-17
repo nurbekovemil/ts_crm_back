@@ -95,7 +95,7 @@ async function userGetAllList(req):Promise<Array<userGetAllListResponse>> {
    limit = limit || 10
    page = page || 1
    let offset: number = page * limit - limit
-   return await this.userHandlers.userGetAllList(limit, offset)
+   return await this.userHandlers.userGetAllList(limit, offset, req.user.id)
 }
 
 export default userRouters

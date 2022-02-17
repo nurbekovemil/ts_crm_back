@@ -61,6 +61,12 @@ export const userGetAllListSchema = {
             username: {
                type: 'string'
             },
+            role: {
+               type: 'string'
+            },
+            orders: {
+               type: 'number'
+            }
          },
          additionalProperties: false
       }

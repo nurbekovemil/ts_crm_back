@@ -25,6 +25,8 @@ export interface userGetAllListQuery {
 export interface userGetAllListResponse {
    id: number
    username: string
+   orders: number
+   role: string
 } 
 
 export interface userLoginResponse {
