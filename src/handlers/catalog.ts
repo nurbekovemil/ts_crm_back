@@ -12,9 +12,9 @@ class CatalogHandlers {
 			//   const queryString = `where ${parent == undefined?  `COALESCE(tnved.parent, '') = ''` : `tnved.parent = ${parent}`}`
 			const { rows } = await client.query(`
          SELECT 
-            tnved_lang.id, 
-            tnved.parent,
-            tnved_lang.title as name
+         tnved_lang.id, 
+         tnved.parent,
+         tnved_lang.title as name
          FROM tnved 
          inner join tnved_lang on tnved.id = tnved_lang.id
          where ${page <= 1 ? `tnved_lang.id < '${limit}'`: `tnved_lang.id >= '${offset-limit}' and tnved_lang.id < '${offset==100?'99':offset}'` }
