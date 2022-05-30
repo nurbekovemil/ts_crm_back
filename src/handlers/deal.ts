@@ -1,68 +1,87 @@
 "use strict";
 
 class DealHandlers {
-	constructor(readonly db, readonly jwt) {
-		this.db = db;
-		this.jwt = jwt;
-	}
+  constructor(readonly db, readonly jwt) {
+    this.db = db;
+    this.jwt = jwt;
+  }
 
-	async createDeal(user_id, user_to, order_from, order_to) {
-		const client = await this.db.connect();
-		try {
-			await client.query(
-				`
-            insert into deals (user_from, user_to, order_from, order_to, status) 
-            values($1, $2, $3, $4, $5)`,
-				[user_id, user_to, order_from, order_to, 1]
-			);
-			return {
-				message: "Предложение успешно отправлен!",
-			};
-		} catch (error) {
-			return error;
-		} finally {
-			client.release();
-		}
-	}
+  async createDeal(user_from, user_to, order_from, order_to) {
+    const client = await this.db.connect();
+    try {
+      const { rows } = await client.query(
+        `
+			select * from deals where  user_from = $1 and user_to = $2 and order_from = $3 and order_to = $4
+			`,
+        [user_from, user_to, order_from, order_to]
+      );
+      if (rows.length) {
+        return {
+          message: "Вы уже отправили предложение!",
+        };
+      }
+      await client.query(
+        `
+				insert into deals (user_from, user_to, order_from, order_to, status) 
+				values($1, $2, $3, $4, $5)`,
+        [user_from, user_to, order_from, order_to, 1]
+      );
+      return {
+        message: "Предложение успешно отправлен!",
+      };
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
 
-	async getDeals(user_id, status) {
-		const client = await this.db.connect();
-		try {
-			const { rows } = await client.query(
-				`
+  async getDeals(user_id, status) {
+    const client = await this.db.connect();
+    try {
+      const { rows } = await client.query(
+        `
          select
          (select title from orders where user_id = user_from and id = order_from) as title_order_from,
          (select title from orders where user_id = user_to and id = order_to) as title_order_to,
          case when user_from = $1 then true else false end as own,
-         user_from, user_to, order_from, order_to, deals.id,
+         user_from, 
+         user_to, 
+         order_from, 
+         order_to, 
+         deals.id,
          to_char("created_at", 'DD.MM.YYYY') as created_at,
-         status,
+         deals.status,
          deal_status.title as status_title,
-         deal_status.color as status_color
+         deal_status.color as status_color,
+         uf.username as from_username,
+         ut.username as to_username
          from deals 
-         inner join deal_status on status = deal_status.id
+         inner join deal_status on deals.status = deal_status.id
+         inner join users uf on deals.user_from = uf.id
+         inner join users ut on deals.user_to = ut.id
          where ${
-						status == 2
-							? "(status = 2 or status = 4)"
-							: "(status = 1 or status = 3)"
-					} and (user_from = $1 or user_to = $1)
+           status == 2
+             ? "(deals.status = 2 or deals.status = 4)"
+             : "(deals.status = 1 or deals.status = 3)"
+         } and (user_from = $1 or user_to = $1)
          order by created_at desc
          `,
-				[user_id]
-			);
-			return rows;
-		} catch (error) {
-			return error;
-		} finally {
-			client.release();
-		}
-	}
+        [user_id]
+      );
+      return rows;
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
 
-	async getDealById(deal_id, user_id) {
-		const client = await this.db.connect();
-		try {
-			const { rows } = await client.query(
-				`            
+  async getDealById(deal_id, user_id) {
+    const client = await this.db.connect();
+    try {
+      const { rows } = await client.query(
+        `            
 select 
 d.*, 
 to_char(d.created_at, 'DD.MM.YYYY') as created_at,
@@ -94,21 +113,21 @@ inner join order_weights as ow on o_f.weight = ow.id
 where d.id = $1
 
          `,
-				[deal_id, user_id]
-			);
-			return rows[0];
-		} catch (error) {
-			return error;
-		} finally {
-			client.release();
-		}
-	}
+        [deal_id, user_id]
+      );
+      return rows[0];
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
 
-	async getDealOrders(deal_id, user_id) {
-		const client = await this.db.connect();
-		try {
-			const { rows } = await client.query(
-				`
+  async getDealOrders(deal_id, user_id) {
+    const client = await this.db.connect();
+    try {
+      const { rows } = await client.query(
+        `
          select 
          o.*,
          case when o.user_id = $2 then true else false end as own,
@@ -119,7 +138,7 @@ where d.id = $1
          od.title as delivery,
          op.title as payment,
          ow.title as weight,
-				 jsonb_agg(img.*) as images
+		 jsonb_agg(img.*) as images
          from deals d
          inner join orders o on d.order_from = o.id or d.order_to = o.id
          inner join order_types as ot on o.order_type = ot.id 
@@ -128,10 +147,10 @@ where d.id = $1
          inner join order_deliveries as od on o.delivery = od.id
          inner join order_payments as op on o.payment = op.id
          inner join order_weights as ow on o.weight = ow.id 
-				 inner join path_images as img on o.id = img.order_id
+		 inner join path_images as img on o.id = img.order_id
          where d.id = $1
-				 group by 
-				 o.id,
+		group by 
+		 o.id,
 				 ot.title,
          os.title,
          oc.title,
@@ -139,35 +158,42 @@ where d.id = $1
          op.title,
          ow.title
 				 `,
-				[deal_id, user_id]
-			);
-			return rows;
-		} catch (error) {
-			return error;
-		} finally {
-			client.release();
-		}
-	}
+        [deal_id, user_id]
+      );
+      return rows;
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
 
-	async updateDealStatus(status, deal_id) {
-		const client = await this.db.connect();
-		try {
-			await client.query("update deals set status = $1 where id = $2", [
-				status,
-				deal_id,
-			]);
-			return {
-				message:
-					status == 2 || status == 1
-						? "Предложение принято!"
-						: "Предложение отклонен!",
-			};
-		} catch (error) {
-			return error;
-		} finally {
-			client.release();
-		}
-	}
+  async updateDealStatus(status, deal_id) {
+    const client = await this.db.connect();
+    try {
+      const { rows } = await client.query(
+        "update deals set status = $1 where id = $2 returning order_from, order_to",
+        [status, deal_id]
+      );
+      if (status == 2) {
+        let { order_from, order_to } = rows[0];
+        await client.query(
+          "update orders set status = 3 where id = $1 or id = $2",
+          [order_from, order_to]
+        );
+      }
+      return {
+        message:
+          status == 2 || status == 1
+            ? "Предложение принято!"
+            : "Предложение отклонен!",
+      };
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
 }
 
 export default DealHandlers;

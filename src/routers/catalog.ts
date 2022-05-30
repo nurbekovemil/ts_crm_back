@@ -1,24 +1,30 @@
-import { FastifyInstance } from "fastify"
+import { FastifyInstance } from "fastify";
 
-import { 
-    verifyUserAuth
- } from "../hooks/user-auth"
+import { verifyUserAuth } from "../hooks/user-auth";
 
-const catalogRouters = async (app: FastifyInstance) =>{
+const catalogRouters = async (app: FastifyInstance) => {
+  app.get("/", getTnvedCategories);
+  app.get("/categories", getCategories);
+  app.get("/categories/:id", getCategoryOrders);
+  app.post("/latestorders", latestorders);
+};
 
-    app.get('/', getTnvedCategories)
-
+async function getTnvedCategories(req) {
+  const { page } = req.query;
+  const tnved = await this.catalogHandlers.getTnvedCategories(page);
+  return tnved;
 }
 
-async function test(req) {
-  return await this.catalogHandlers.test()
+async function getCategories(req) {
+  return await this.catalogHandlers.getCategories();
 }
 
-async function getTnvedCategories (req) {
-  const {page} = req.query
-  const tnved = await this.catalogHandlers.getTnvedCategories(page)
-  return tnved
+async function getCategoryOrders(req) {
+  return await this.catalogHandlers.getCategoryOrders(req.params);
 }
 
+async function latestorders(req) {
+  return await this.catalogHandlers.latestorders(req.body);
+}
 
-export default catalogRouters
+export default catalogRouters;

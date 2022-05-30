@@ -1,101 +1,134 @@
-import { FastifyInstance } from "fastify"
-import * as bcrypt from 'bcrypt'
+import { FastifyInstance } from "fastify";
+import * as bcrypt from "bcrypt";
 
 // user types
-import { 
-   userGetAllListQuery, 
-   userGetAllListResponse, 
-   userBodyReguest,
-   userUpdateReguest,
-   userLoginResponse, 
-   userMessageResponse,
-   userGetMe,
-} from "../types/user"
+import {
+  userGetAllListResponse,
+  userBodyReguest,
+  userUpdateReguest,
+  userLoginResponse,
+  userMessageResponse,
+  userGetMe,
+} from "../types/user";
 
 // user schemas
-import { 
-   userBodyRequestLoginSchema, 
-   userBodyRequestUpdateSchema,
-   userBodyReguestCreateSchema,
-   userGetAllListSchema,
-} from "../schemas/user"
+import {
+  userBodyRequestLoginSchema,
+  userBodyRequestUpdateSchema,
+  userBodyReguestCreateSchema,
+  userGetAllListSchema,
+} from "../schemas/user";
 
-import { 
-   verifyUserAuth 
-} from "../hooks/user-auth"
+import { verifyUserAuth } from "../hooks/user-auth";
 
+const userRouters = async (app: FastifyInstance) => {
+  app.post("/login", { schema: userBodyRequestLoginSchema }, userLogin);
 
+  app.post(
+    "/",
+    { preHandler: [verifyUserAuth], schema: userBodyReguestCreateSchema },
+    userCreate
+  );
+  app.post("/publuc/registration/", {}, userRegistration);
 
-const userRouters =  async (app: FastifyInstance) => {
+  app.get(
+    "/",
+    { preHandler: [verifyUserAuth], schema: userGetAllListSchema },
+    userGetAllList
+  );
 
-   app.post('/login',{
-      schema: userBodyRequestLoginSchema
-   }, userLogin)
-   
-   app.post('/', {
+  app.get(
+    "/me",
+    {
       preHandler: [verifyUserAuth],
-      schema: userBodyReguestCreateSchema,
-   }, userCreate)
-   
-   app.get<{Querystring: userGetAllListQuery}>('/',
-   {
+    },
+    userGetMeH
+  );
+  app.get("/:id", { preHandler: [verifyUserAuth] }, getUserById);
+  app.get("/profile", { preHandler: [verifyUserAuth] }, getProfile);
+  app.put(
+    "/",
+    {
       preHandler: [verifyUserAuth],
-      schema: userGetAllListSchema
-   }, userGetAllList)
+      schema: userBodyRequestUpdateSchema,
+    },
+    userUpdate
+  );
 
-   app.get('/me', {
-      preHandler: [verifyUserAuth]
-   }, userGetMeH)
+  app.put("/status", updateUserStatus);
 
-   app.put('/',{
+  app.delete(
+    "/:id",
+    {
       preHandler: [verifyUserAuth],
-      schema: userBodyRequestUpdateSchema
-   }, userUpdate)
+    },
+    userDelete
+  );
 
-   app.delete('/:id', 
-   {
-      preHandler: [verifyUserAuth],
-   }, userDelete)
+  app.get("/template", {}, gerUserRegisterTemplate);
+};
+//////Для ревью
+
+async function userLogin(req: userBodyReguest): Promise<userLoginResponse> {
+  const { username, password } = req.body;
+  return await this.userHandlers.userLogin(username, password);
 }
-//////Для ревью 
-   
-async function userLogin(req: userBodyReguest):Promise<userLoginResponse>  {
-   const {
-      username, 
-      password
-   } = req.body
-   return await this.userHandlers.userLogin(username, password)
+
+async function userCreate(req: userBodyReguest): Promise<userMessageResponse> {
+  const { username, password, user_type, data } = req.body;
+  return await this.userHandlers.userCreate(
+    username,
+    password,
+    user_type,
+    data
+  );
 }
 
-async function userCreate(req: userBodyReguest):Promise<userMessageResponse> {
-   const {
-      username, 
-      password
-   } = req.body
-   return await this.userHandlers.userCreate(username, password)
+async function userRegistration(req) {
+  return await this.userHandlers.userRegistration(req.body);
 }
 
 async function userGetMeH(req): Promise<userGetMe> {
-   const {id}= req.user
-   return await this.userHandlers.userGetMe(id)
+  const { id } = req.user;
+  return await this.userHandlers.userGetMe(id);
+}
+async function getUserById(req) {
+  const user_id = req.params.id;
+  const me_id = req.user.id;
+  return await this.userHandlers.getUserById(user_id, me_id);
 }
 
-async function userUpdate(req: userUpdateReguest):Promise<userMessageResponse> {
-   const {id, username, password} = req.body
-   return await this.userHandlers.userUpdate(id, username, password)
+async function updateUserStatus(req) {
+  const { status, user_id } = req.query;
+  return await this.userHandlers.updateUserStatus(status, user_id);
 }
 
-async function userDelete(req):Promise<userMessageResponse> {
-   const {id} = req.params
-   return await this.userHandlers.userDelete(id)
+async function userUpdate(
+  req: userUpdateReguest
+): Promise<userMessageResponse> {
+  const { id, username, password } = req.body;
+  return await this.userHandlers.userUpdate(id, username, password);
 }
 
-async function userGetAllList(req):Promise<Array<userGetAllListResponse>> {
-   let {limit, page} = req.query
-   limit = limit || 10
-   page = page || 1
-   let offset: number = page * limit - limit
-   return await this.userHandlers.userGetAllList(limit, offset, req.user.id)
+async function userDelete(req): Promise<userMessageResponse> {
+  const { id } = req.params;
+  return await this.userHandlers.userDelete(id);
 }
 
-export default userRouters
+async function userGetAllList(req): Promise<Array<userGetAllListResponse>> {
+  let { limit, page } = req.query;
+  let offset: number = page * limit - limit;
+  return await this.userHandlers.userGetAllList(limit, offset, req.user.id);
+}
+
+async function gerUserRegisterTemplate(req) {
+  const { type } = req.query;
+  return await this.userHandlers.gerUserRegisterTemplate(type);
+}
+
+async function getProfile(req) {
+  const { id } = req.user;
+  return await this.userHandlers.getUserById(id, id);
+}
+
+export default userRouters;

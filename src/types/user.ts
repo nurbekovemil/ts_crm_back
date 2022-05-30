@@ -1,54 +1,50 @@
-import { FastifyRequest} from "fastify";
-import fastifyJwt, { FastifyJWTOptions } from 'fastify-jwt'
+import { FastifyRequest } from "fastify";
+import fastifyJwt, { FastifyJWTOptions } from "fastify-jwt";
 
 export type userBodyReguest = FastifyRequest<{
-   Body:{
-      id?: number
-      username: string
-      password?: string
-   }
-}>
+  Body: {
+    id?: number;
+    username: string;
+    password?: string;
+    user_type?: number;
+    data?: string;
+  };
+}>;
 
 export type userUpdateReguest = FastifyRequest<{
-   Body: {
-      id?: number
-      username: string
-      password?: string
-   }
-}>
-
-export interface userGetAllListQuery {
-   limit: number
-   page: number
-}
+  Body: {
+    id?: number;
+    username: string;
+    password?: string;
+  };
+}>;
 
 export interface userGetAllListResponse {
-   id: number
-   username: string
-   orders: number
-   role: string
-} 
-
-export interface userLoginResponse {
-   user: {}
-   menus: []
-   token: string
+  id: number;
+  username: string;
+  orders: number;
+  role: string;
 }
 
+export interface userLoginResponse {
+  user: {};
+  menus: [];
+  token: string;
+}
 
 export interface userMessageResponse {
-   message: string
+  message: string;
 }
 
 export interface userGetMe {
-   user: {}
-   menus: any[]
+  user: {};
+  menus: any[];
 }
 
 declare module "fastify-jwt" {
-   interface FastifyJWT {
-     payload: { 
-        id: number
-      }
-   }
+  interface FastifyJWT {
+    payload: {
+      id: number;
+    };
+  }
 }

@@ -5,13 +5,23 @@ export type createOrderReguest = FastifyRequest<{
       type: number 
       payment: number 
       delivery: number
+      currency: number
       weight: number 
       category: number
       description: string
       title: string
       price: number 
       amount: number
-      cost: number
+      cost: number,
+      nds: number, 
+		gost: string, 
+		warranty: string, 
+		packing_form: string, 
+		special_conditions:string,
+		country: string,
+      lot: string,
+		code_tnved: string,
+		product_lacation: string
    }
 }>
 declare module 'fastify' {

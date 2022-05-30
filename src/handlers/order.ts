@@ -1,52 +1,211 @@
-'use strict'
-
+"use strict";
+const fs = require("fs");
+const path = require("path");
 class OrderHandlers {
-	constructor(readonly db, readonly jwt) {
-		this.db = db;
-		this.jwt = jwt;
-	}
+  constructor(readonly db, readonly jwt) {
+    this.db = db;
+    this.jwt = jwt;
+  }
 
-	async createOrder({type, payment, delivery, weight, category, description, title, price, amount, cost},{id},files) {
-		const client = await this.db.connect();
-		try {
-			const {rows} = await client.query(
-				` insert into orders (order_type, payment, delivery, weight, category, description, title, price, amount, cost, status, user_id) 
-					values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id, order_type
+  async createOrder(
+    {
+      type,
+      payment,
+      delivery,
+      currency,
+      weight,
+      category,
+      description,
+      title,
+      price,
+      amount,
+      cost,
+      nds,
+      gost,
+      warranty,
+      packing_form,
+      special_conditions,
+      country,
+      lot,
+      code_tnved,
+      product_lacation,
+    },
+    { id }
+  ) {
+    const client = await this.db.connect();
+
+    try {
+      const { rows } = await client.query(
+        ` insert into orders (
+					order_type, 
+					payment, 
+					delivery, 
+          currency,
+					weight, 
+					category, 
+					description, 
+					title, 
+					price, 
+					amount, 
+					cost, 
+					status, 
+					nds,
+					gost,
+					warranty,
+					packing_form,
+					special_conditions,
+					country,
+					lot,
+					code_tnved,
+					product_lacation,
+					user_id
+					) 
+					values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,$14, $15, $16, $17, $18, $19, $20, $21, $22) RETURNING id, order_type
 				`,
-				[type, payment, delivery, weight, category, description, title, price, amount, cost, 1, id]
-			);
+        [
+          type,
+          payment,
+          delivery,
+          currency,
+          weight,
+          category,
+          description,
+          title,
+          price,
+          amount,
+          cost,
+          1,
+          nds,
+          gost,
+          warranty,
+          packing_form,
+          special_conditions,
+          country,
+          lot,
+          code_tnved,
+          product_lacation,
+          id,
+        ]
+      );
+      return rows[0];
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
 
-			return rows[0]
-				
-		} catch (error) {
-			return error;
-		} finally {
-			client.release();
-		}
-	}
+  async updateOrderById(
+    {
+      category,
+      type,
+      delivery,
+      payment,
+      weight,
+      title,
+      gost,
+      warranty,
+      packing_form,
+      country,
+      special_conditions,
+      code_tnved,
+      lot,
+      product_lacation,
+      description,
+      price,
+      amount,
+      cost,
+      currency,
+    },
+    order_id
+  ) {
+    const client = await this.db.connect();
+    try {
+      const { rows } = await client.query(
+        `update orders set 
+          category = $1,
+          order_type = $2,
+          delivery = $3,
+          payment = $4,
+          weight = $5,
+          title = $6,
+          gost = $7,
+          warranty = $8,
+          packing_form = $9,
+          country = $10,
+          special_conditions = $11,
+          code_tnved = $12,
+          lot = $13,
+          product_lacation = $14,
+          description = $15,
+          price = $16,
+          amount = $17,
+          cost = $18,
+          currency = $19
+          where id = $20
+				`,
+        [
+          category,
+          type,
+          delivery,
+          payment,
+          weight,
+          title,
+          gost,
+          warranty,
+          packing_form,
+          country,
+          special_conditions,
+          code_tnved,
+          lot,
+          product_lacation,
+          description,
+          price,
+          amount,
+          cost,
+          currency,
+          order_id,
+        ]
+      );
+      return {
+        message: "Данные успешно обновлены!",
+      };
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
 
-	async createImage (files, id) {
-		const client = await this.db.connect();
-		try {
-			files.map(item => {
-				let path = `/${item.destination}/${item.filename}`
-				client.query('insert into path_images (order_id, path) values ($1, $2)', [id, path])
-			})
-		} catch (error) {
-			return error
-		} finally {
-			client.release();
-		}
-	}
+  async createImage(files, id) {
+    const client = await this.db.connect();
+    try {
+      const queryString =
+        "insert into path_images (order_id, path) values ($1, $2)";
+      if (!files.length) {
+        let default_path = "static/images/default.png";
+        return client.query(queryString, [id, default_path]);
+      }
+      files.map((item) => {
+        let path = `${item.destination}/${item.filename}`;
+        client.query(queryString, [id, path]);
+      });
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
 
-	async getMyOrderList(type, user_id) {
-		const client = await this.db.connect();
-		try {
-			const orders = await client.query(
-				`
+  async getMyOrderList(type, user_id) {
+    const client = await this.db.connect();
+    try {
+      const orders = await client.query(
+        `
             select 
                o.id, 
                o.title, 
+               o.status as status_id,
                os.title as status,
                os.color as status_color, 
                to_char("created_at", 'DD.MM.YYYY') as created_at
@@ -54,22 +213,22 @@ class OrderHandlers {
                inner join order_status as os 
                on os.id = o.status
                where order_type = $1 and user_id = $2`,
-				[type, user_id]
-			);
-			return orders.rows;
-		} catch (error) {
-			return error;
-		} finally {
-			client.release();
-		}
-	}
+        [type, user_id]
+      );
+      return orders.rows;
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
 
-	async getOrderByIdPrivate(user_id, order_id) {
-		const client = await this.db.connect();
-		try {
-			const { rows } = await client.query(
-				`select 
-								o.* ,
+  async getOrderByIdPrivate(user_id, order_id) {
+    const client = await this.db.connect();
+    try {
+      const { rows } = await client.query(
+        `select 
+				              o.* ,
 											 to_char(o.created_at, 'DD.MM.YYYY') as created_at,
 											 case when o.user_id = $1 then true else false end as own,
 											 ot.title as order_type_title,
@@ -86,7 +245,11 @@ class OrderHandlers {
 											 
 											 ow.title as weight,
 											 ow.id as weight_id,
-											 jsonb_agg(img.*) as images
+                       u.username,
+                       cu.title as currency,
+                       cu.id as currency_id,
+                       cu.symbol as currency_symbol,
+                       jsonb_agg(img.*) as images
 											 
 											 from orders as o
 				
@@ -102,33 +265,40 @@ class OrderHandlers {
 												on o.payment = op.id
 												inner join order_weights as ow
 												on o.weight = ow.id
-												inner join path_images as img
+												left join path_images as img
 												on o.id = img.order_id
-											 where o.id = $2
-								 GROUP BY o.id, ot.title, os.title,
-											 oc.title,
+                        inner join users as u
+												on o.user_id = u.id
+                        inner join order_currencies as cu
+												on o.currency = cu.id
+								where o.id = $2
+								GROUP BY o.id, ot.title, os.title,
+								oc.title,
 											 oc.id,
 											 od.title ,
 											 od.id ,
 											 op.title ,
 											 op.id ,
 											 ow.title,
-											 ow.id `,
-				[user_id, order_id]
-			);
-			return rows
-		} catch (error) {
-			return error;
-		} finally {
-			client.release();
-		}
-	}
+											 ow.id,
+                       u.id,
+                       cu.id
+                       `,
+        [user_id, order_id]
+      );
+      return rows;
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
 
-	async getOrderByIdPublic(id) {
-		const client = await this.db.connect();
-		try {
-			const { rows } = await client.query(
-				`select 
+  async getOrderByIdPublic(id) {
+    const client = await this.db.connect();
+    try {
+      const { rows } = await client.query(
+        `select 
                o.*, 
                to_char("created_at", 'DD.MM.YYYY') as created_at,
                ot.title as order_type_title,
@@ -165,20 +335,20 @@ class OrderHandlers {
 							 op.title,
 							 ow.title
 							 `,
-				[id]
-			);
-			return rows[0];
-		} catch (error) {
-			return error;
-		} finally {
-			client.release();
-		}
-	}
-	
-	async getAllOrderList(role, id) {
-		const client = await this.db.connect();
-		try {
-			let queryString = `
+        [id]
+      );
+      return rows[0];
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async getAllOrderList(role, id) {
+    const client = await this.db.connect();
+    try {
+      let queryString = `
          select 
             o.id,
             o.title,
@@ -196,33 +366,35 @@ class OrderHandlers {
          on os.id = o.status
          inner join order_types as ot
          on o.order_type = ot.id 
-         where ${role == "ADMIN" ? " o.status = 1 or o.status = 2": "o.status = 2"}
+         where ${
+           role == "ADMIN" ? " o.status = 1 or o.status = 2" : "o.status = 2"
+         }
          order by o.status = 1 desc, o.created_at desc`;
-			const { rows } = await client.query(queryString, [id]);
-			return rows;
-		} catch (error) {
-			return error;
-		} finally {
-			client.release();
-		}
-	}
+      const { rows } = await client.query(queryString, [id]);
+      return rows;
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
 
-	async getOptions(option){
-		const client = await this.db.connect();
-		try {
-			const {rows} = await client.query(`select * from ${option}`)
-			return rows
-		} catch (error) {
-			return error
-		} finally {
-			client.release()
-		}
-	}
+  async getOptions(option) {
+    const client = await this.db.connect();
+    try {
+      const { rows } = await client.query(`select * from ${option}`);
+      return rows;
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
 
-	async getOrderListHomePage(type) {
-		const client = await this.db.connect();
-		try {
-			let queryString = `
+  async getOrderListHomePage(type) {
+    const client = await this.db.connect();
+    try {
+      let queryString = `
 				select 
 				o.id,
 				o.title,
@@ -240,7 +412,7 @@ class OrderHandlers {
 				on os.id = o.status
 				inner join order_types as ot
 				on o.order_type = ot.id 
-				inner join path_images as img
+				left join path_images as img
 				on o.id = img.order_id
 				where o.status = 2 and o.order_type = $1
 				group by 
@@ -254,34 +426,97 @@ class OrderHandlers {
 				os.color,
 				ot.title
 				order by o.status = 1 desc, o.created_at desc`;
-			const { rows } = await client.query(queryString, [type]);
-			return rows;
-		} catch (error) {
-			return error;
-		} finally {
-			client.release();
-		}
-	}
+      const { rows } = await client.query(queryString, [type]);
+      return rows;
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
 
-	async updateOrderStatus(order_id, status) {
-		const client = await this.db.connect();
-		try {
-			await client.query("update orders set status = $2 where id = $1", [
-				order_id,
-				status,
-			]);
-			return {
-				message:
-					status === 2 || status === 1
-						? "Заявка успешно принять!"
-						: "Заявка отклонен!",
-			};
-		} catch (error) {
-			return error;
-		} finally {
-			client.release();
-		}
-	}
+  async updateOrderStatus(order_id, status) {
+    const client = await this.db.connect();
+    try {
+      await client.query("update orders set status = $2 where id = $1", [
+        order_id,
+        status,
+      ]);
+
+      return {
+        message:
+          status == 2 || status == 1
+            ? "Заявка успешно принять!"
+            : status == 4 && "Заявка отклонен!",
+      };
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async deleteOrder(order_id) {
+    const client = await this.db.connect();
+    try {
+      await client.query("delete from orders where id = $1", [order_id]);
+      await this.deleteOrderImages(order_id);
+      return {
+        message: "Заявка успешно удален!",
+      };
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
+  async deleteOrderImages(order_id) {
+    const client = await this.db.connect();
+    try {
+      const { rows } = await client.query(
+        `select * from path_images where order_id = $1`,
+        [order_id]
+      );
+      if (rows.length > 0) {
+        await client.query("delete from path_images where order_id = $1", [
+          order_id,
+        ]);
+        rows.map((img) => {
+          fs.unlink(img.path, function (err) {
+            if (err) throw err;
+          });
+        });
+      }
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
+  async deleteImage(id) {
+    const client = await this.db.connect();
+    try {
+      const { rows } = await client.query(
+        `delete from path_images where id = $1 returning path`,
+        [id]
+      );
+      if (rows.length > 0) {
+        rows.map((img) => {
+          fs.unlink(img.path, function (err) {
+            if (err) throw err;
+          });
+        });
+      }
+      return {
+        message: "Изображение успешно удален!",
+      };
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
+  async updateOrderImage(order_id) {}
 }
 
 export default OrderHandlers;
