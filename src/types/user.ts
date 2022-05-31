@@ -6,8 +6,8 @@ export type userBodyReguest = FastifyRequest<{
     id?: number;
     username: string;
     password?: string;
-    user_type?: number;
-    data?: string;
+    type: number;
+    role: number;
   };
 }>;
 

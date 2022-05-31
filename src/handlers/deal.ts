@@ -175,11 +175,17 @@ where d.id = $1
         "update deals set status = $1 where id = $2 returning order_from, order_to",
         [status, deal_id]
       );
+      // после подтверждения закрываем заявки
       if (status == 2) {
         let { order_from, order_to } = rows[0];
         await client.query(
           "update orders set status = 3 where id = $1 or id = $2",
           [order_from, order_to]
+        );
+        // другие предложения отклоняем
+        await client.query(
+          "update deals set status = 3 where id <> $1 and order_to = $2",
+          [deal_id, order_to]
         );
       }
       return {
@@ -188,6 +194,33 @@ where d.id = $1
             ? "Предложение принято!"
             : "Предложение отклонен!",
       };
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async getOfferHistory({ id }) {
+    const client = await this.db.connect();
+    try {
+      const { rows } = await client.query(
+        `
+      select 
+      o.id, 
+      o.title, 
+      o.amount,
+      o.price,
+      o.cost
+      from deals d 
+      inner join orders o 
+      on o.id = d.order_from 
+      where d.order_to = $1 
+      order by o.cost desc
+      `,
+        [id]
+      );
+      return rows;
     } catch (error) {
       return error;
     } finally {

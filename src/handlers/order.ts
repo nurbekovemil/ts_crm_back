@@ -226,6 +226,7 @@ class OrderHandlers {
   async getOrderByIdPrivate(user_id, order_id) {
     const client = await this.db.connect();
     try {
+      console.log("--------", order_id, user_id);
       const { rows } = await client.query(
         `select 
 				              o.* ,
@@ -308,6 +309,7 @@ class OrderHandlers {
 							 od.title as delivery,
 							 op.title as payment,
 							 ow.title as weight,
+               cur.symbol as currency_symbol,
 							 jsonb_agg(img.*) as images
                from orders as o
                inner join order_types as ot
@@ -322,8 +324,9 @@ class OrderHandlers {
                on o.payment = op.id
 							 inner join order_weights as ow
                on o.weight = ow.id
-							 inner join path_images as img
+							 left join path_images as img
 							 on o.id = img.order_id
+               inner join order_currencies cur on cur.id = o.currency
                where o.id = $1
 							 group by 
 							 o.id, 
@@ -333,7 +336,8 @@ class OrderHandlers {
 							 oc.id,
 							 od.title,
 							 op.title,
-							 ow.title
+							 ow.title,
+               cur.symbol
 							 `,
         [id]
       );

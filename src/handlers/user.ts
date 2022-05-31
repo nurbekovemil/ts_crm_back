@@ -52,22 +52,21 @@ class UserHandlers {
     }
   }
 
-  async userCreate(username, password, type, data) {
+  async userCreate(username, password, type, role) {
     const client = await this.db.connect();
     try {
       const user = await client.query(
         "select username from users where username = $1",
         [username]
       );
-      console.log("create---", username, password, type);
 
       if (user.rowCount > 0) {
         throw new Error(`Пользователь ${username} уже существует!`);
       }
       const hashPassword: string = await bcrypt.hash(password, 5);
       await client.query(
-        "insert into users (username, password, role, status, info, type) values ($1, $2, $3, $4, $5, $6)",
-        [username, hashPassword, 2, 1, data, type]
+        "insert into users (username, password, role, status, type) values ($1, $2, $3, $4, $5)",
+        [username, hashPassword, role, 2, type]
       );
       return {
         message: `Пользователь ${username} успешно создан!`,
@@ -83,10 +82,21 @@ class UserHandlers {
     const client = await this.db.connect();
     try {
       const { user_type, login, password, data } = user_data;
-      const res = await this.userCreate(login, password, user_type, data);
+      const user = await client.query(
+        "select username from users where username = $1",
+        [login]
+      );
+
+      if (user.rowCount > 0) {
+        throw new Error(`Пользователь ${login} уже существует!`);
+      }
+      const hashPassword: string = await bcrypt.hash(password, 5);
+      await client.query(
+        "insert into users (username, password, role, status, type, info) values ($1, $2, $3, $4, $5, $6)",
+        [login, hashPassword, 2, 1, user_type, data]
+      );
       return {
-        message:
-          "Регистрация прошло успешно, администратор рассматривает ваши данные!",
+        message: "Регистрация прошло успешно, ваши данные обрабатывается!",
       };
     } catch (error) {
       return error;
@@ -267,7 +277,6 @@ class UserHandlers {
   async updateUserStatus(status, user_id) {
     const client = await this.db.connect();
     try {
-      console.log(status, user_id);
       await client.query("update users set status = $1 where id = $2", [
         status,
         user_id,
@@ -280,6 +289,25 @@ class UserHandlers {
           : status == 3 && "Пользователь заблокирован!";
       return {
         message,
+      };
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async updateUserData({ id, login, password, info }) {
+    const client = await this.db.connect();
+    try {
+      const hashPassword: string = await bcrypt.hash(password, 5);
+      await client.query(
+        "update users set username = $1, password = $2, info = $3 where id = $4",
+        [login, hashPassword, info, id]
+      );
+
+      return {
+        message: `Данные ${login} успешно обновлен!`,
       };
     } catch (error) {
       return error;

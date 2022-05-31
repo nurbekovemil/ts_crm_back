@@ -57,6 +57,7 @@ const userRouters = async (app: FastifyInstance) => {
 
   app.put("/status", updateUserStatus);
 
+  app.put("/user", { preHandler: [verifyUserAuth] }, updateUserData);
   app.delete(
     "/:id",
     {
@@ -75,13 +76,9 @@ async function userLogin(req: userBodyReguest): Promise<userLoginResponse> {
 }
 
 async function userCreate(req: userBodyReguest): Promise<userMessageResponse> {
-  const { username, password, user_type, data } = req.body;
-  return await this.userHandlers.userCreate(
-    username,
-    password,
-    user_type,
-    data
-  );
+  const { username, password, type, role } = req.body;
+  console.log(req.body);
+  return await this.userHandlers.userCreate(username, password, type, role);
 }
 
 async function userRegistration(req) {
@@ -117,6 +114,8 @@ async function userDelete(req): Promise<userMessageResponse> {
 
 async function userGetAllList(req): Promise<Array<userGetAllListResponse>> {
   let { limit, page } = req.query;
+  limit = limit || 10;
+  page = page || 1;
   let offset: number = page * limit - limit;
   return await this.userHandlers.userGetAllList(limit, offset, req.user.id);
 }
@@ -129,6 +128,10 @@ async function gerUserRegisterTemplate(req) {
 async function getProfile(req) {
   const { id } = req.user;
   return await this.userHandlers.getUserById(id, id);
+}
+
+async function updateUserData(req) {
+  return await this.userHandlers.updateUserData(req.body);
 }
 
 export default userRouters;
