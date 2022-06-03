@@ -410,12 +410,14 @@ class OrderHandlers {
 				os.title as status,
 				os.color as status_color,
 				ot.title as order_type,
+        oc.symbol as currency_symbol,
 				jsonb_agg(img.*) as images
 				from orders as o 
 				inner join order_status as os 
 				on os.id = o.status
 				inner join order_types as ot
 				on o.order_type = ot.id 
+        inner join order_currencies oc on o.currency = oc.id
 				left join path_images as img
 				on o.id = img.order_id
 				where o.status = 2 and o.order_type = $1
@@ -428,7 +430,8 @@ class OrderHandlers {
 				o.cost,
 				os.title,
 				os.color,
-				ot.title
+				ot.title,
+        oc.symbol
 				order by o.status = 1 desc, o.created_at desc`;
       const { rows } = await client.query(queryString, [type]);
       return rows;
@@ -463,6 +466,14 @@ class OrderHandlers {
   async deleteOrder(order_id) {
     const client = await this.db.connect();
     try {
+      const { rows } = await client.query(
+        `
+      select o.id from orders o inner join deals d on d.order_from = o.id or d.order_to = o.id where o.id = $1`,
+        [order_id]
+      );
+      if (rows.length > 0) {
+        throw new Error(`Заявка есть в предложении или в сделке!`);
+      }
       await client.query("delete from orders where id = $1", [order_id]);
       await this.deleteOrderImages(order_id);
       return {

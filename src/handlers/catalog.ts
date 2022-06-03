@@ -58,7 +58,7 @@ class CatalogHandlers {
       const { rows } = await client.query(`
       select oc.id, oc.title, count(o.*) as orders from order_categories oc
       left join orders o on o.category = oc.id and o.status = 2
-  where oc.id in (1, 2, 6, 4)
+      where oc.id in (1, 2, 6, 4)
       group by oc.title, oc.id
       `);
       return rows;

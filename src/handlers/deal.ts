@@ -82,35 +82,40 @@ class DealHandlers {
     try {
       const { rows } = await client.query(
         `            
-select 
-d.*, 
-to_char(d.created_at, 'DD.MM.YYYY') as created_at,
-u_f.username as user_from_name,
-u_t.username as user_to_name,
-ds.title as status_title, 
-ds.color as status_color,
-o_f.order_type as order_type_from,
-o_f.title,
-o_f.cost,
-o_f.amount,
-o_f.price,
-oc.title category,
-od.title delivery,
-op.title payment,
-ow.title weight,
-o_t.order_type as order_type_to,
-case when d.user_from = $2 then true else false end as own
-from deals d 
-inner join deal_status ds on ds.id = d.status 
-inner join users u_f on d.user_from = u_f.id 
-inner join users u_t on d.user_to = u_t.id
-inner join orders o_f on o_f.id = d.order_from
-inner join orders o_t on o_t.id = d.order_to
-inner join order_categories as oc on o_f.category = oc.id
-inner join order_deliveries as od on o_f.delivery = od.id
-inner join order_payments as op on o_f.payment = op.id
-inner join order_weights as ow on o_f.weight = ow.id 
-where d.id = $1
+        select 
+        d.*, 
+        to_char(d.created_at, 'DD.MM.YYYY') as created_at,
+        u_f.username as user_from_name,
+        u_t.username as user_to_name,
+        ds.title as status_title, 
+        ds.color as status_color,
+        o_f.order_type as order_type_from,
+        o_f.title,
+        o_f.cost,
+        o_f.amount,
+        o_f.price,
+        o_f.description,
+        o_f.special_conditions,
+        oc.title category,
+        od.title delivery,
+        op.title payment,
+        ow.title weight,
+        order_currencies.symbol as currency_symbol,
+        order_currencies.title as currency_title,
+        o_t.order_type as order_type_to,
+        case when d.user_from = $2 then true else false end as own
+        from deals d 
+        inner join deal_status ds on ds.id = d.status 
+        inner join users u_f on d.user_from = u_f.id 
+        inner join users u_t on d.user_to = u_t.id
+        inner join orders o_f on o_f.id = d.order_from
+        inner join orders o_t on o_t.id = d.order_to
+        inner join order_categories as oc on o_f.category = oc.id
+        inner join order_deliveries as od on o_f.delivery = od.id
+        inner join order_payments as op on o_f.payment = op.id
+        inner join order_weights as ow on o_f.weight = ow.id 
+        inner join order_currencies on order_currencies.id = o_f.currency
+        where d.id = $1
 
          `,
         [deal_id, user_id]
@@ -147,7 +152,7 @@ where d.id = $1
          inner join order_deliveries as od on o.delivery = od.id
          inner join order_payments as op on o.payment = op.id
          inner join order_weights as ow on o.weight = ow.id 
-		 inner join path_images as img on o.id = img.order_id
+		 left join path_images as img on o.id = img.order_id
          where d.id = $1
 		group by 
 		 o.id,
@@ -178,15 +183,35 @@ where d.id = $1
       // после подтверждения закрываем заявки
       if (status == 2) {
         let { order_from, order_to } = rows[0];
-        await client.query(
-          "update orders set status = 3 where id = $1 or id = $2",
-          [order_from, order_to]
+        const orderfrom = await client.query(
+          "select amount, cost from orders where id = $1",
+          [order_from]
         );
-        // другие предложения отклоняем
-        await client.query(
-          "update deals set status = 3 where id <> $1 and order_to = $2",
-          [deal_id, order_to]
+        const orderto = await client.query(
+          "select amount from orders where id = $1",
+          [order_to]
         );
+        if (orderfrom.rows[0].amount >= orderto.rows[0].amount) {
+          await client.query(
+            "update orders set status = 3 where id = $1 or id = $2",
+            [order_from, order_to]
+          );
+          await client.query(
+            "update deals set status = 3 where id <> $1 and order_to = $2",
+            [deal_id, order_to]
+          );
+        } else {
+          await client.query(
+            `update orders 
+              set amount = orders.amount - ${orderfrom.rows[0].amount}, 
+              cost = orders.cost - ${orderfrom.rows[0].cost}
+              where id = $1`,
+            [order_to]
+          );
+          await client.query(`update orders set status = 3 where id = $1`, [
+            order_from,
+          ]);
+        }
       }
       return {
         message:
@@ -220,6 +245,55 @@ where d.id = $1
       `,
         [id]
       );
+      return rows;
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async deleteOffer({ id }) {
+    const client = await this.db.connect();
+    try {
+      await client.query(`delete from deals where id = $1`, [id]);
+      return {
+        message: "Предложения удалено!",
+      };
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async getTrageList() {
+    const client = await this.db.connect();
+    try {
+      const { rows } = await client.query(`
+      select 
+      d.*, 
+      to_char(d.created_at, 'DD.MM.YYYY') as created_at,
+      u_f.username as user_from_name,
+      u_t.username as user_to_name,
+      o_f.order_type as order_type_from,
+      o_f.title,
+      o_f.cost,
+      o_f.amount,
+      o_f.price,
+      ow.title weight,
+      order_currencies.symbol as currency_symbol,
+      order_currencies.title as currency_title
+      from deals d 
+      inner join deal_status ds on ds.id = d.status 
+      inner join users u_f on d.user_from = u_f.id 
+      inner join users u_t on d.user_to = u_t.id
+      inner join orders o_f on o_f.id = d.order_from
+      inner join orders o_t on o_t.id = d.order_to
+      inner join order_weights as ow on o_f.weight = ow.id 
+      inner join order_currencies on order_currencies.id = o_f.currency
+      where d.status = 2
+      `);
       return rows;
     } catch (error) {
       return error;

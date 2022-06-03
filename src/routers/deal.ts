@@ -15,6 +15,10 @@ const dealRouters = async (app: FastifyInstance) => {
   app.put("/", { preHandler: [verifyUserAuth] }, updateDealStatus); //  update deal status
 
   app.get("/history/", {}, getOfferHistory); //
+
+  app.get("/trade-list", {}, getTrageList);
+
+  app.delete("/:id", { preHandler: [verifyUserAuth] }, deleteOfferById);
 };
 
 // ******deal handlers******
@@ -48,5 +52,13 @@ async function updateDealStatus(req) {
 
 async function getOfferHistory(req) {
   return await this.dealHandlers.getOfferHistory(req.query);
+}
+
+async function deleteOfferById(req) {
+  return await this.dealHandlers.deleteOffer(req.params);
+}
+
+async function getTrageList() {
+  return await this.dealHandlers.getTrageList();
 }
 export default dealRouters;
