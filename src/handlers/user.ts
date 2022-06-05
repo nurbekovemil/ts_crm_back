@@ -64,9 +64,23 @@ class UserHandlers {
         throw new Error(`Пользователь ${username} уже существует!`);
       }
       const hashPassword: string = await bcrypt.hash(password, 5);
+      const { rows } = await client.query(
+        "select template from user_types where id = $1",
+        [type]
+      );
+
+      const user_type = JSON.stringify(
+        rows[0].template.map((f) => {
+          if (f.group == "data_for_access") {
+            f.items[0].value = username;
+            f.items[1].value = password;
+          }
+          return f;
+        })
+      );
       await client.query(
-        "insert into users (username, password, role, status, type) values ($1, $2, $3, $4, $5)",
-        [username, hashPassword, role, 2, type]
+        "insert into users (username, password, role, status, type, info) values ($1, $2, $3, $4, $5, $6)",
+        [username, hashPassword, role, 2, type, user_type]
       );
       return {
         message: `Пользователь ${username} успешно создан!`,
@@ -111,7 +125,7 @@ class UserHandlers {
       const user = await client.query(
         `
             select 
-               u.*, r.role as user_role 
+               u.*, r.role as user_role
             from users u 
             inner join roles r 
             on r.id = u.role 
@@ -250,6 +264,7 @@ class UserHandlers {
         u.info,
         u.status,
         ut.title as user_type,
+        ut.id as type,
         us.title as status_title,
         us.color as status_color,
         case when u.id = $2 then true else false end as me,
@@ -263,7 +278,7 @@ class UserHandlers {
         left join user_types ut on ut.id = u.type
 		inner join user_status us on u.status = us.id
         where u.id = $1
-        group by u.id, us.id, ut.title`,
+        group by u.id, us.id, ut.title, ut.id`,
         [user_id, me_id]
       );
       return rows[0];

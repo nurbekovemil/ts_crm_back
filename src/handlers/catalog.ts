@@ -104,11 +104,14 @@ class CatalogHandlers {
         o.id, 
         o.title,
         o.status, 
-        o.price, 
+        o.price,
+        oc.symbol as currency_symbol,
         jsonb_agg(pi.*) as images  
-        from orders o left join path_images pi on pi.order_id = o.id 
+        from orders o 
+        left join path_images pi on pi.order_id = o.id 
+        inner join order_currencies oc on o.currency = oc.id
         where o.id = any(array[${order_ids}]) and o.status = 2 
-        group by o.id
+        group by o.id, oc.symbol
       `
       );
       return rows;

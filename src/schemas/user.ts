@@ -22,6 +22,9 @@ export const userBodyRequestLoginSchema = {
             username: {
               type: "string",
             },
+            type: {
+              type: "number",
+            },
             role: {
               type: "string",
             },
