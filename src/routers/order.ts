@@ -91,9 +91,12 @@ async function updateOrderById(req) {
   return await this.orderHandlers.updateOrderById(order, id);
 }
 async function getMyOrderList(req) {
-  const { type } = req.query;
+  let { type, page, limit } = req.query;
+  limit = limit || 10;
+  page = page || 1;
+  let offset: number = page * limit - limit;
   const { id } = req.user;
-  return await this.orderHandlers.getMyOrderList(type, id);
+  return await this.orderHandlers.getMyOrderList(type, limit, offset, id);
 }
 async function getOrderByIdPrivate(req, reply) {
   const order_id = req.params.id;
@@ -107,7 +110,11 @@ async function getOrderByIdPrivate(req, reply) {
 }
 async function getAllOrderList(req) {
   const { id, role } = req.user;
-  return await this.orderHandlers.getAllOrderList(role, id);
+  let { page, limit } = req.query;
+  limit = limit || 10;
+  page = page || 1;
+  let offset: number = page * limit - limit;
+  return await this.orderHandlers.getAllOrderList(role, id, limit, offset);
 }
 async function getOptions(req) {
   const { option } = req.query;
@@ -124,8 +131,8 @@ async function updateOrderStatus(req) {
 }
 
 async function getOrderListHomePage(req) {
-  const { type } = req.query;
-  let res = await this.orderHandlers.getOrderListHomePage(type);
+  const { type, limit } = req.query;
+  let res = await this.orderHandlers.getOrderListHomePage(type, limit);
   return res;
 }
 

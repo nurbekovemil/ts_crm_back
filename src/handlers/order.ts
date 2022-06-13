@@ -197,7 +197,7 @@ class OrderHandlers {
     }
   }
 
-  async getMyOrderList(type, user_id) {
+  async getMyOrderList(type, limit, offset, user_id) {
     const client = await this.db.connect();
     try {
       const orders = await client.query(
@@ -212,10 +212,19 @@ class OrderHandlers {
                from orders as o 
                inner join order_status as os 
                on os.id = o.status
-               where order_type = $1 and user_id = $2`,
+               where order_type = $1 and user_id = $2
+               limit $3 offset $4
+               `,
+        [type, user_id, limit, offset]
+      );
+      const order_type_count = await client.query(
+        "select count(*) from orders where order_type = $1 and user_id = $2",
         [type, user_id]
       );
-      return orders.rows;
+      return {
+        rows: orders.rows,
+        count: order_type_count.rows[0].count,
+      };
     } catch (error) {
       return error;
     } finally {
@@ -349,7 +358,7 @@ class OrderHandlers {
     }
   }
 
-  async getAllOrderList(role, id) {
+  async getAllOrderList(role, id, limit, offset) {
     const client = await this.db.connect();
     try {
       let queryString = `
@@ -364,18 +373,31 @@ class OrderHandlers {
             o.cost,
             os.title as status,
             os.color as status_color,
-            ot.title as order_type
+            ot.title as order_type,
+            oc.symbol
          from orders as o 
-         inner join order_status as os 
-         on os.id = o.status
-         inner join order_types as ot
-         on o.order_type = ot.id 
+            inner join order_status as os 
+            on os.id = o.status
+            inner join order_types as ot
+            on o.order_type = ot.id 
+            inner join order_currencies oc
+            on oc.id = o.currency
          where ${
            role == "ADMIN" ? " o.status = 1 or o.status = 2" : "o.status = 2"
          }
-         order by o.status = 1 desc, o.created_at desc`;
-      const { rows } = await client.query(queryString, [id]);
-      return rows;
+         order by o.status = 1 desc, o.created_at desc
+         limit $2 offset $3
+         `;
+      const { rows } = await client.query(queryString, [id, limit, offset]);
+      const order_count = await client.query(`
+         select count(*) from orders where ${
+           role == "ADMIN" ? " status = 1 or status = 2" : "status = 2"
+         }
+      `);
+      return {
+        rows,
+        count: order_count.rows[0].count,
+      };
     } catch (error) {
       return error;
     } finally {
@@ -395,7 +417,7 @@ class OrderHandlers {
     }
   }
 
-  async getOrderListHomePage(type) {
+  async getOrderListHomePage(type, limit) {
     const client = await this.db.connect();
     try {
       let queryString = `
@@ -432,9 +454,11 @@ class OrderHandlers {
 				os.color,
 				ot.title,
         oc.symbol
-				order by o.status = 1 desc, o.created_at desc`;
-      const { rows } = await client.query(queryString, [type]);
-      return rows;
+				order by o.status = 1 desc, o.created_at desc
+        limit $2
+        `;
+      const { rows } = await client.query(queryString, [type, limit]);
+      return { rows };
     } catch (error) {
       return error;
     } finally {

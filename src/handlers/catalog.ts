@@ -97,7 +97,6 @@ class CatalogHandlers {
   async latestorders({ order_ids }) {
     const client = await this.db.connect();
     try {
-      console.log(order_ids);
       const { rows } = await client.query(
         `
         select 
@@ -115,6 +114,90 @@ class CatalogHandlers {
       `
       );
       return rows;
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async getOrderTnved({ search }) {
+    const client = await this.db.connect();
+    try {
+      const { rows } = await client.query(`
+      select t.id, tl.title from tnved t
+      inner join tnved_lang tl on tl.id = t.id and tl.lang = 'ru'
+      where t.id like '%${search}%' order by id asc
+      `);
+      return rows;
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
+  async getCatalogByTable({ table }) {
+    const client = await this.db.connect();
+    try {
+      const { rows } = await client.query(`
+        select *, false as isedit from ${table} order by id desc
+      `);
+      return rows;
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
+  async updateCatalogItem({ table, data }) {
+    const client = await this.db.connect();
+    try {
+      const queryString =
+        table == "order_currencies"
+          ? `title = '${data.title}', code = '${data.code}', symbol = '${data.symbol}'`
+          : `title = '${data.title}'`;
+      await client.query(`
+        update ${table} set ${queryString} where id = ${data.id}
+      `);
+      return {
+        message: "Данные успешно обновлены!",
+      };
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async deleteCatalogItem({ table, id }) {
+    const client = await this.db.connect();
+    try {
+      await client.query(`
+        delete from ${table} where id = ${id}
+      `);
+      return {
+        message: "Данные успешно удалены!",
+      };
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async createCatalogItem({ table, data }) {
+    const client = await this.db.connect();
+    try {
+      const queryString =
+        table == "order_currencies"
+          ? `(title, code, symbol) values ('${data.title}', '${data.code}', '${data.symbol}')`
+          : `(title) values ('${data.title}')`;
+      await client.query(`
+        insert into ${table} ${queryString}
+      `);
+      return {
+        message: "Данные успешно добавлены!",
+      };
     } catch (error) {
       return error;
     } finally {
