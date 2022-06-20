@@ -78,11 +78,14 @@ class CatalogHandlers {
         o.id, 
         o.title, 
         o.price,
-        jsonb_agg(pi.*) as images
+        jsonb_agg(pi.*) as images,
+		oc.symbol as currency_symbol
         from orders o 
         left join path_images pi on pi.order_id = o.id
+		inner join order_currencies oc
+		on oc.id = o.currency
         where o.category = $1 and o.status = 2
-        group by o.id
+        group by o.id, oc.symbol
       `,
         [id]
       );
@@ -124,11 +127,13 @@ class CatalogHandlers {
   async getOrderTnved({ search }) {
     const client = await this.db.connect();
     try {
-      const { rows } = await client.query(`
-      select t.id, tl.title from tnved t
+      const queryString = `select t.id, tl.title from tnved t
       inner join tnved_lang tl on tl.id = t.id and tl.lang = 'ru'
-      where t.id like '%${search}%' order by id asc
-      `);
+      where tl.title like '%${
+        search && search.split(" ").join("_").toUpperCase()
+      }%' order by t.id asc`;
+
+      const { rows } = await client.query(queryString);
       return rows;
     } catch (error) {
       return error;

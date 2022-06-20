@@ -235,7 +235,6 @@ class OrderHandlers {
   async getOrderByIdPrivate(user_id, order_id) {
     const client = await this.db.connect();
     try {
-      console.log("--------", order_id, user_id);
       const { rows } = await client.query(
         `select 
 				              o.* ,
@@ -371,10 +370,13 @@ class OrderHandlers {
             o.price,
             o.amount,
             o.cost,
+            o.user_id,
             os.title as status,
             os.color as status_color,
             ot.title as order_type,
-            oc.symbol
+            oc.symbol,
+            u.username,
+            w.title as weight_title
          from orders as o 
             inner join order_status as os 
             on os.id = o.status
@@ -382,6 +384,10 @@ class OrderHandlers {
             on o.order_type = ot.id 
             inner join order_currencies oc
             on oc.id = o.currency
+            inner join users as u
+            on o.user_id = u.id
+            inner join order_weights as w
+            on o.weight = w.id
          where ${
            role == "ADMIN" ? " o.status = 1 or o.status = 2" : "o.status = 2"
          }
