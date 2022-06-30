@@ -213,15 +213,18 @@ class UserHandlers {
               u.id, 
               u.username,
               r.role,
+              r.title as role_title,
               us.title as status_title,
               us.color as status_color,
               count(o.id) as orders,
+              ut.title as user_type,
 							case when u.id = $3 then true else false end as own
             from users u
               inner join roles r on u.role = r.id
               left join orders o on u.id = o.user_id
               inner join user_status us on u.status = us.id
-            group by u.id, r.id, us.id
+              left join user_types ut on u.type = ut.id
+            group by u.id, r.id, us.id, ut.id
               order by r.role = 'ADMIN' desc
               limit $1 offset $2`,
         [limit, offset, user_id]

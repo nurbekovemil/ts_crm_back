@@ -18,6 +18,8 @@ const dealRouters = async (app: FastifyInstance) => {
 
   app.get("/trade-list/:date", {}, getTrageList);
 
+  app.get("/depo-deals", { preHandler: [verifyUserAuth] }, getDepoDeals);
+
   app.delete("/:id", { preHandler: [verifyUserAuth] }, deleteOfferById);
 };
 
@@ -60,5 +62,9 @@ async function deleteOfferById(req) {
 
 async function getTrageList(req) {
   return await this.dealHandlers.getTrageList(req.params);
+}
+
+async function getDepoDeals(req) {
+  return await this.dealHandlers.getDepoDeals();
 }
 export default dealRouters;

@@ -29,6 +29,7 @@ class OrderHandlers {
       lot,
       code_tnved,
       product_lacation,
+      cd,
     },
     { id }
   ) {
@@ -58,9 +59,10 @@ class OrderHandlers {
 					lot,
 					code_tnved,
 					product_lacation,
+          cd,
 					user_id
 					) 
-					values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,$14, $15, $16, $17, $18, $19, $20, $21, $22) RETURNING id, order_type
+					values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,$14, $15, $16, $17, $18, $19, $20, $21, $22, $23) RETURNING id, order_type
 				`,
         [
           type,
@@ -84,6 +86,7 @@ class OrderHandlers {
           lot,
           code_tnved,
           product_lacation,
+          cd,
           id,
         ]
       );
@@ -116,6 +119,7 @@ class OrderHandlers {
       amount,
       cost,
       currency,
+      cd,
     },
     order_id
   ) {
@@ -141,8 +145,9 @@ class OrderHandlers {
           price = $16,
           amount = $17,
           cost = $18,
-          currency = $19
-          where id = $20
+          currency = $19,
+          cd = $20
+          where id = $21
 				`,
         [
           category,
@@ -164,6 +169,7 @@ class OrderHandlers {
           amount,
           cost,
           currency,
+          cd,
           order_id,
         ]
       );
@@ -240,6 +246,7 @@ class OrderHandlers {
 				              o.* ,
 											 to_char(o.created_at, 'DD.MM.YYYY') as created_at,
 											 case when o.user_id = $1 then true else false end as own,
+                       o.cd,
 											 ot.title as order_type_title,
 											 
 											 os.title as status_title,
@@ -310,6 +317,7 @@ class OrderHandlers {
         `select 
                o.*, 
                to_char("created_at", 'DD.MM.YYYY') as created_at,
+               o.cd,
                ot.title as order_type_title,
                os.title as status_title,
 							 oc.title as category,

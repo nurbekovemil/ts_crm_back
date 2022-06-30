@@ -10,7 +10,7 @@ const orderRouters = async (app) => {
   app.post(
     "/private/",
     {
-      preHandler: [verifyUserAuth, app.upload.array("images", 15)],
+      preHandler: [verifyUserAuth, app.upload.array("images", 16)],
       // schema: createOrderSchema
     },
     createOrder

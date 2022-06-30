@@ -9,6 +9,8 @@ class DealHandlers {
   async createDeal(user_from, user_to, order_from, order_to) {
     const client = await this.db.connect();
     try {
+      let deal_status = 1;
+      let cd = false;
       const { rows } = await client.query(
         `select * from deals where  user_from = $1 and user_to = $2 and order_from = $3 and order_to = $4`,
         [user_from, user_to, order_from, order_to]
@@ -18,10 +20,18 @@ class DealHandlers {
           message: "Вы уже отправили предложение!",
         };
       }
+      const isCD = await client.query(
+        "select cd from orders where id = $1 and cd = true",
+        [order_to]
+      );
+      // проверка на "Клиринговый расчет"
+      if (isCD.rows.length > 0 && isCD.rows[0].cd == true) {
+        cd = true;
+      }
       await client.query(
-        `insert into deals (user_from, user_to, order_from, order_to, status) 
-				values($1, $2, $3, $4, $5)`,
-        [user_from, user_to, order_from, order_to, 1]
+        `insert into deals (user_from, user_to, order_from, order_to, status, cd) 
+				values($1, $2, $3, $4, $5, $6)`,
+        [user_from, user_to, order_from, order_to, deal_status, cd]
       );
       await client.query("update orders set status = 8 where id = $1", [
         order_from,
@@ -62,7 +72,7 @@ class DealHandlers {
          inner join users ut on deals.user_to = ut.id
          where ${
            status == 2
-             ? "(deals.status = 2 or deals.status = 4)"
+             ? "(deals.status = 2 or deals.status = 4 or deals.status = 5)"
              : "(deals.status = 1 or deals.status = 3)"
          } and (user_from = $1 or user_to = $1)
          order by created_at desc
@@ -87,6 +97,8 @@ class DealHandlers {
         to_char(d.created_at, 'DD.MM.YYYY') as created_at,
         u_f.username as user_from_name,
         u_t.username as user_to_name,
+        u_f.info as user_from_info,
+        u_t.info as user_to_info,
         ds.title as status_title, 
         ds.color as status_color,
         o_f.order_type as order_type_from,
@@ -293,6 +305,7 @@ class DealHandlers {
       o_f.cost,
       o_f.amount,
       o_f.price,
+      o_f.code_tnved,
       ow.title weight,
       order_currencies.symbol as currency_symbol,
       order_currencies.title as currency_title
@@ -306,6 +319,41 @@ class DealHandlers {
       inner join order_currencies on order_currencies.id = o_f.currency
       where d.status = 2 and d.created_at >= NOW() - INTERVAL '${date} day'
       `);
+      return rows;
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async getDepoDeals() {
+    const client = await this.db.connect();
+    try {
+      const { rows } = await client.query(
+        `
+         select
+         (select title from orders where user_id = user_from and id = order_from) as title_order_from,
+         (select title from orders where user_id = user_to and id = order_to) as title_order_to,
+         user_from, 
+         user_to, 
+         order_from, 
+         order_to, 
+         deals.id,
+         to_char("created_at", 'DD.MM.YYYY') as created_at,
+         deals.status,
+         deal_status.title as status_title,
+         deal_status.color as status_color,
+         uf.username as from_username,
+         ut.username as to_username
+         from deals 
+         inner join deal_status on deals.status = deal_status.id
+         inner join users uf on deals.user_from = uf.id
+         inner join users ut on deals.user_to = ut.id
+         where (deals.status = 2 or deals.status = 4 or deals.status = 5) and deals.cd = true
+         order by created_at desc
+         `
+      );
       return rows;
     } catch (error) {
       return error;
