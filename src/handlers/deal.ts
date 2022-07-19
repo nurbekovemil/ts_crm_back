@@ -128,11 +128,36 @@ class DealHandlers {
         inner join order_weights as ow on o_f.weight = ow.id 
         inner join order_currencies on order_currencies.id = o_f.currency
         where d.id = $1
-
          `,
         [deal_id, user_id]
       );
-      return rows[0];
+      const comments = await this.getDealComments(deal_id);
+      return { deal: rows[0], comments };
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async getDealComments(deal_id) {
+    const client = await this.db.connect();
+    try {
+      const { rows } = await client.query(
+        `
+        select 
+        dc.comment,
+        to_char(dc.created_at, 'DD.MM.YYYY,  HH24:MI:SS') as created_at,
+        u.username,
+        df.path as file_path
+        from deal_comments dc
+        inner join users u on u.id = dc.user_id
+        left join deal_files df on df.comment_id = dc.id
+        where deal_id = $1
+				`,
+        [deal_id]
+      );
+      return rows;
     } catch (error) {
       return error;
     } finally {
@@ -355,6 +380,31 @@ class DealHandlers {
          `
       );
       return rows;
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async updateDealWithComment({ status, deal_id, comment }, files, user_id) {
+    const client = await this.db.connect();
+    try {
+      await this.updateDealStatus(status, deal_id);
+      const { rows } = await client.query(
+        `
+        insert into deal_comments (deal_id, user_id, comment) values ($1, $2, $3) returning id
+      `,
+        [deal_id, user_id, comment]
+      );
+      const queryString =
+        "insert into deal_files (comment_id, path) values ($1, $2)";
+      files.map((item) => {
+        client.query(queryString, [rows[0].id, item.path]);
+      });
+      return {
+        message: "work",
+      };
     } catch (error) {
       return error;
     } finally {

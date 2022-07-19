@@ -40,6 +40,7 @@ const appInstance = (app, opt, done) => {
       cb(null, `${file.fieldname}-${Date.now()}.${fx}`);
     },
   });
+  // order create decorate
   app.decorate(
     "upload",
     multer({
@@ -48,12 +49,40 @@ const appInstance = (app, opt, done) => {
         if (
           file.mimetype == "image/png" ||
           file.mimetype == "image/jpg" ||
-          file.mimetype == "image/jpeg"
+          file.mimetype == "image/jpeg" ||
+          file.mimetype == "application/pdf"
         ) {
           cb(null, true);
         } else {
           cb(null, false);
           cb(new Error("Only .png, .jpg and .jpeg format allowed!"));
+        }
+      },
+    })
+  );
+  // deal with comment
+  app.decorate(
+    "dealComment",
+    multer({
+      storage: storage,
+      fileFilter: (req, file, cb) => {
+        if (
+          file.mimetype == "application/msword" ||
+          file.mimetype ==
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+          file.mimetype == "image/jpeg" ||
+          file.mimetype == "image/jpg" ||
+          file.mimetype == "image/png" ||
+          file.mimetype == "application/pdf"
+        ) {
+          cb(null, true);
+        } else {
+          cb(null, false);
+          cb(
+            new Error(
+              "Only .png, .jpg, .jpeg, .doc, .docx, .pdf format allowed!"
+            )
+          );
         }
       },
     })
@@ -92,6 +121,15 @@ const buildApp = (opt: FastifyServerOptions) => {
     secret: secretkey,
     sign: {
       expiresIn: "4h",
+    },
+    messages: {
+      badRequestErrorMessage: "Формат: Authorization Bearer [токен]",
+      noAuthorizationInHeaderMessage: "Заголовок авторизации отсутствует!",
+      authorizationTokenExpiredMessage:
+        "Срок действия токена авторизации истек",
+      authorizationTokenInvalid: (err) => {
+        return `Токен авторизации недействителен: ${err.message}`;
+      },
     },
   });
   app.register(fp(appInstance));

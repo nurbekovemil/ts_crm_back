@@ -183,19 +183,24 @@ class OrderHandlers {
     }
   }
 
-  async createImage(files, id) {
+  async createImage({ images, certificate }, id) {
     const client = await this.db.connect();
     try {
-      const queryString =
+      console.log("files --- ", images, certificate);
+      const queryStringOrderPath =
         "insert into path_images (order_id, path) values ($1, $2)";
-      if (!files.length) {
-        let default_path = "static/images/default.png";
-        return client.query(queryString, [id, default_path]);
+      const queryStringOrderCertificatePath =
+        "insert into order_certificates (order_id, path) values ($1, $2)";
+      if (images.length > 0) {
+        images.map(({ path }) => {
+          client.query(queryStringOrderPath, [id, path]);
+        });
       }
-      files.map((item) => {
-        let path = `${item.destination}/${item.filename}`;
-        client.query(queryString, [id, path]);
-      });
+      if (certificate.length > 0) {
+        certificate.map(({ path }) => {
+          client.query(queryStringOrderCertificatePath, [id, path]);
+        });
+      }
     } catch (error) {
       return error;
     } finally {
@@ -265,7 +270,8 @@ class OrderHandlers {
                        cu.title as currency,
                        cu.id as currency_id,
                        cu.symbol as currency_symbol,
-                       jsonb_agg(img.*) as images
+                       jsonb_agg(img.*) as images,
+                       jsonb_agg(o_cert.*) as cert
 											 
 											 from orders as o
 				
@@ -287,6 +293,8 @@ class OrderHandlers {
 												on o.user_id = u.id
                         inner join order_currencies as cu
 												on o.currency = cu.id
+                        left join order_certificates o_cert
+												on o_cert.order_id = o.id
 								where o.id = $2
 								GROUP BY o.id, ot.title, os.title,
 								oc.title,
@@ -326,7 +334,8 @@ class OrderHandlers {
 							 op.title as payment,
 							 ow.title as weight,
                cur.symbol as currency_symbol,
-							 jsonb_agg(img.*) as images
+							 jsonb_agg(img.*) as images,
+               jsonb_agg(o_cert.*) as cert
                from orders as o
                inner join order_types as ot
                on o.order_type = ot.id 
@@ -343,6 +352,8 @@ class OrderHandlers {
 							 left join path_images as img
 							 on o.id = img.order_id
                inner join order_currencies cur on cur.id = o.currency
+               left join order_certificates o_cert
+               on o_cert.order_id = o.id
                where o.id = $1
 							 group by 
 							 o.id, 
@@ -397,7 +408,7 @@ class OrderHandlers {
             inner join order_weights as w
             on o.weight = w.id
          where ${
-           role == "ADMIN" ? " o.status = 1 or o.status = 2" : "o.status = 2"
+           role == "ADMIN" ? " o.status in (1,2, 4, 3, 7)" : "o.status = 2"
          }
          order by o.status = 1 desc, o.created_at desc
          limit $2 offset $3

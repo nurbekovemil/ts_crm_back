@@ -32,7 +32,10 @@ class UserHandlers {
         "select * from menus where $1 = any(role) order by id asc",
         [user.rows[0].role]
       );
-
+      await client.query(
+        "update users set last_visit = current_timestamp where username = $1",
+        [username]
+      );
       const token = await this.jwt.sign({
         id: user.rows[0].id,
         role: user.rows[0].user_role,
@@ -139,6 +142,10 @@ class UserHandlers {
         "select * from menus where $1 = any(role) order by id asc",
         [user.rows[0].role]
       );
+      await client.query(
+        "update users set last_visit = current_timestamp where id = $1",
+        [id]
+      );
       return {
         user: {
           username: user.rows[0].username,
@@ -212,6 +219,7 @@ class UserHandlers {
             select 
               u.id, 
               u.username,
+              to_char(u.last_visit, 'DD.MM.YYYY, HH24:MI:SS') as last_visit,
               r.role,
               r.title as role_title,
               us.title as status_title,

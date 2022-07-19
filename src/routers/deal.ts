@@ -2,7 +2,7 @@ import { FastifyInstance } from "fastify";
 
 import { verifyUserAuth } from "../hooks/user-auth";
 
-const dealRouters = async (app: FastifyInstance) => {
+const dealRouters = async (app) => {
   // ******Deals******
   app.post("/", { preHandler: [verifyUserAuth] }, createDeal); // Create deal
 
@@ -13,6 +13,13 @@ const dealRouters = async (app: FastifyInstance) => {
   app.get("/order/:id", { preHandler: [verifyUserAuth] }, getDealOrders); // Get orders of deals
 
   app.put("/", { preHandler: [verifyUserAuth] }, updateDealStatus); //  update deal by status
+  app.put(
+    "/comment",
+    {
+      preHandler: [verifyUserAuth, app.dealComment.array("dealFiles", 16)],
+    },
+    updateDealWithComment
+  ); //  update deal by status
 
   app.get("/history/", {}, getOfferHistory);
 
@@ -50,6 +57,14 @@ async function getDealOrders(req) {
 async function updateDealStatus(req) {
   const { status, deal_id } = req.body;
   return await this.dealHandlers.updateDealStatus(status, deal_id);
+}
+
+async function updateDealWithComment(req) {
+  return await this.dealHandlers.updateDealWithComment(
+    req.body,
+    req.files,
+    req.user.id
+  );
 }
 
 async function getOfferHistory(req) {

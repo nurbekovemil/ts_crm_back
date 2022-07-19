@@ -10,7 +10,13 @@ const orderRouters = async (app) => {
   app.post(
     "/private/",
     {
-      preHandler: [verifyUserAuth, app.upload.array("images", 16)],
+      preHandler: [
+        verifyUserAuth,
+        app.upload.fields([
+          { name: "images", maxCount: 16 },
+          { name: "certificate", maxCount: 10 },
+        ]),
+      ],
       // schema: createOrderSchema
     },
     createOrder
@@ -71,8 +77,12 @@ async function getOrderByIdPublic(req) {
 
 // ******Order handlers*******
 async function createOrder(req: createOrderReguest, reply) {
+  // console.log("create order files ----- ", req.files);
+  // console.log("create order body ----- ", req.body);
+  // return { files: req.files, body: req.body };
   const rows = await this.orderHandlers.createOrder(req.body, req.user);
-  if (req.files.length > 0) {
+  console.log("files --- ", Object.keys(req.files).length);
+  if (Object.keys(req.files).length != 0) {
     await this.orderHandlers.createImage(req.files, rows.id);
   }
   if (rows) {
