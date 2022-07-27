@@ -28,7 +28,15 @@ class OrderHandlers {
       country,
       lot,
       code_tnved,
-      product_lacation,
+      product_location,
+      delivery_date,
+      payment_date,
+      marking,
+      quality,
+      auction_date_start,
+      auction_date_end,
+      auction_time_start,
+      auction_time_end,
       cd,
     },
     { id }
@@ -37,7 +45,7 @@ class OrderHandlers {
 
     try {
       const { rows } = await client.query(
-        ` insert into orders (
+        `insert into orders (
 					order_type, 
 					payment, 
 					delivery, 
@@ -58,11 +66,19 @@ class OrderHandlers {
 					country,
 					lot,
 					code_tnved,
-					product_lacation,
+					product_location,
+            delivery_date,
+            payment_date,
+            marking,
+            quality,
+            auction_date_start,
+            auction_date_end,
+            auction_time_start,
+            auction_time_end,
           cd,
 					user_id
 					) 
-					values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,$14, $15, $16, $17, $18, $19, $20, $21, $22, $23) RETURNING id, order_type
+					values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,$14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27,$28,$29,$30,$31) RETURNING id, order_type
 				`,
         [
           type,
@@ -85,7 +101,15 @@ class OrderHandlers {
           country,
           lot,
           code_tnved,
-          product_lacation,
+          product_location,
+          delivery_date,
+          payment_date,
+          marking,
+          quality,
+          auction_date_start,
+          auction_date_end,
+          auction_time_start,
+          auction_time_end,
           cd,
           id,
         ]
@@ -113,12 +137,20 @@ class OrderHandlers {
       special_conditions,
       code_tnved,
       lot,
-      product_lacation,
+      product_location,
       description,
       price,
       amount,
       cost,
       currency,
+      delivery_date,
+      payment_date,
+      marking,
+      quality,
+      auction_date_start,
+      auction_date_end,
+      auction_time_start,
+      auction_time_end,
       cd,
     },
     order_id
@@ -140,14 +172,22 @@ class OrderHandlers {
           special_conditions = $11,
           code_tnved = $12,
           lot = $13,
-          product_lacation = $14,
+          product_location = $14,
           description = $15,
           price = $16,
           amount = $17,
           cost = $18,
           currency = $19,
-          cd = $20
-          where id = $21
+          delivery_date = $20,
+          payment_date = $21,
+          marking = $22,
+          quality = $23,
+          auction_date_start = $24,
+          auction_date_end = $25,
+          auction_time_start = $26,
+          auction_time_end = $27,
+          cd = $28
+          where id = $29
 				`,
         [
           category,
@@ -163,12 +203,20 @@ class OrderHandlers {
           special_conditions,
           code_tnved,
           lot,
-          product_lacation,
+          product_location,
           description,
           price,
           amount,
           cost,
           currency,
+          delivery_date,
+          payment_date,
+          marking,
+          quality,
+          auction_date_start,
+          auction_date_end,
+          auction_time_start,
+          auction_time_end,
           cd,
           order_id,
         ]
@@ -250,7 +298,16 @@ class OrderHandlers {
         `select 
 				              o.* ,
 											 to_char(o.created_at, 'DD.MM.YYYY') as created_at,
+											 to_char(o.delivery_date, 'DD.MM.YYYY') as delivery_date,
+											 to_char(o.payment_date, 'DD.MM.YYYY') as payment_date,
 											 case when o.user_id = $1 then true else false end as own,
+                       case when 
+                      (current_date BETWEEN auction_date_start AND auction_date_end) 
+                      and 
+                      (now()::time(0) between auction_time_start and auction_time_end) then true 
+                      else false end as auction,
+                      to_char(o.auction_date_start, 'DD.MM.YYYY') as auction_date_start,
+                      to_char(o.auction_date_end, 'DD.MM.YYYY') as auction_date_end,
                        o.cd,
 											 ot.title as order_type_title,
 											 
@@ -325,7 +382,16 @@ class OrderHandlers {
         `select 
                o.*, 
                to_char("created_at", 'DD.MM.YYYY') as created_at,
+               to_char(o.delivery_date, 'DD.MM.YYYY') as delivery_date,
+							 to_char(o.payment_date, 'DD.MM.YYYY') as payment_date,
+               case when 
+                (current_date BETWEEN auction_date_start AND auction_date_end) 
+                and 
+                (now()::time(0) between auction_time_start and auction_time_end) then true 
+                else false end as auction,
                o.cd,
+               to_char(o.auction_date_start, 'DD.MM.YYYY') as auction_date_start,
+               to_char(o.auction_date_end, 'DD.MM.YYYY') as auction_date_end,
                ot.title as order_type_title,
                os.title as status_title,
 							 oc.title as category,
@@ -498,12 +564,14 @@ class OrderHandlers {
         order_id,
         status,
       ]);
-
+      let message =
+        status == 1 || status == 2 || status == 8
+          ? "Заявка принять!"
+          : status == 4
+          ? "Заявка отклонен!"
+          : "Статус заявки успешно изменен!";
       return {
-        message:
-          status == 2 || status == 1
-            ? "Заявка успешно принять!"
-            : status == 4 && "Заявка отклонен!",
+        message,
       };
     } catch (error) {
       return error;
@@ -515,16 +583,16 @@ class OrderHandlers {
   async deleteOrder(order_id) {
     const client = await this.db.connect();
     try {
+      await this.deleteOrderImages(order_id);
       const { rows } = await client.query(
         `
-      select o.id from orders o inner join deals d on d.order_from = o.id or d.order_to = o.id where o.id = $1`,
+          select o.id from orders o inner join deals d on d.order_from = o.id or d.order_to = o.id where o.id = $1`,
         [order_id]
       );
       if (rows.length > 0) {
         throw new Error(`Заявка есть в предложении или в сделке!`);
       }
       await client.query("delete from orders where id = $1", [order_id]);
-      await this.deleteOrderImages(order_id);
       return {
         message: "Заявка успешно удален!",
       };
@@ -537,15 +605,30 @@ class OrderHandlers {
   async deleteOrderImages(order_id) {
     const client = await this.db.connect();
     try {
-      const { rows } = await client.query(
+      const images = await client.query(
         `select * from path_images where order_id = $1`,
         [order_id]
       );
-      if (rows.length > 0) {
+      const certificates = await client.query(
+        `select * from order_certificates where order_id = $1`,
+        [order_id]
+      );
+      if (images.rows.length > 0) {
         await client.query("delete from path_images where order_id = $1", [
           order_id,
         ]);
-        rows.map((img) => {
+        images.rows.map((img) => {
+          fs.unlink(img.path, function (err) {
+            if (err) throw err;
+          });
+        });
+      }
+      if (certificates.rows.length > 0) {
+        await client.query(
+          "delete from order_certificates where order_id = $1",
+          [order_id]
+        );
+        certificates.rows.map((img) => {
           fs.unlink(img.path, function (err) {
             if (err) throw err;
           });

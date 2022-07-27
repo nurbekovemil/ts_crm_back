@@ -108,6 +108,14 @@ class DealHandlers {
         o_f.price,
         o_f.description,
         o_f.special_conditions,
+        o_f.packing_form,
+        o_f.country,
+        o_f.code_tnved,
+        o_f.product_location,
+        o_f.delivery_date,
+        o_f.payment_date,
+        o_f.marking,
+        o_f.quality,
         oc.title category,
         od.title delivery,
         op.title payment,
@@ -257,7 +265,7 @@ class DealHandlers {
       }
       return {
         message:
-          status == 2 || status == 1
+          status == 2 || status == 1 || status == 5
             ? "Предложение принято!"
             : "Предложение отклонен!",
       };

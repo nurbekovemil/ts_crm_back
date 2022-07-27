@@ -1,42 +1,58 @@
 export const createOrderSchema = {
-	body: {
-		type: "object",
-		required: [
-			"type",
-			"payment",
-			"delivery",
-			"weight",
-			"category",
-			"description",
-			"title",
-			"price",
-			"amount",
-			"cost",
-		],
-		properties: {
-			type: { type: "number" },
-			payment: { type: "number" },
-			delivery: { type: "number" },
-			weight: { type: "number" },
-			category: { type: "number" },
-			description: { type: "string" },
-			title: { type: "string" },
-			price: { type: "number" },
-			amount: { type: "number" },
-			cost: { type: "number" },
-		},
-	},
-	response: {
-		200: {
-			type: "object",
-			properties: {
-				message: {
-					type: "string",
-				},
-				id: {
-					type: "number"
-				}
-			},
-		},
-	},
+  body: {
+    type: "object",
+    required: [
+      "type",
+      "payment",
+      "delivery",
+      "weight",
+      "category",
+      "description",
+      "title",
+      "price",
+      "amount",
+      "cost",
+      "delivery_date",
+      "payment_date",
+      "marking",
+      "quality",
+      "auction_date_start",
+      "auction_date_end",
+      "auction_time_start",
+      "auction_time_end",
+    ],
+    properties: {
+      type: { type: "number" },
+      payment: { type: "number" },
+      delivery: { type: "number" },
+      weight: { type: "number" },
+      category: { type: "number" },
+      description: { type: "string" },
+      title: { type: "string" },
+      price: { type: "number" },
+      amount: { type: "number" },
+      cost: { type: "number" },
+      delivery_date: { type: "string" },
+      payment_date: { type: "string" },
+      marking: { type: "string" },
+      quality: { type: "string" },
+      auction_date_start: { type: "string" },
+      auction_date_end: { type: "string" },
+      auction_time_start: { type: "string" },
+      auction_time_end: { type: "string" },
+    },
+  },
+  response: {
+    200: {
+      type: "object",
+      properties: {
+        message: {
+          type: "string",
+        },
+        id: {
+          type: "number",
+        },
+      },
+    },
+  },
 };

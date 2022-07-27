@@ -22,6 +22,14 @@ export type createOrderReguest = FastifyRequest<{
     lot: string;
     code_tnved: string;
     product_lacation: string;
+    delivery_date: string;
+    payment_date: string;
+    marking: string;
+    quality: string;
+    auction_date_start: string;
+    auction_date_end: string;
+    auction_time_start: string;
+    auction_time_end: string;
   };
 }>;
 declare module "fastify" {
