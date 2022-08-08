@@ -36,6 +36,7 @@ export const createOrderSchema = {
       payment_date: { type: "string" },
       marking: { type: "string" },
       quality: { type: "string" },
+      is_auction: { type: "string" },
       auction_date_start: { type: "string" },
       auction_date_end: { type: "string" },
       auction_time_start: { type: "string" },

@@ -96,8 +96,7 @@ async function getUserById(req) {
 }
 
 async function updateUserStatus(req) {
-  const { status, user_id } = req.query;
-  return await this.userHandlers.updateUserStatus(status, user_id);
+  return await this.userHandlers.updateUserStatus(req.query);
 }
 
 async function userUpdate(

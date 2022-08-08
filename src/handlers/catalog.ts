@@ -131,7 +131,7 @@ class CatalogHandlers {
       inner join tnved_lang tl on tl.id = t.id and tl.lang = 'ru'
       where tl.title like '%${
         search && search.split(" ").join("_").toUpperCase()
-      }%' order by t.id asc`;
+      }%' or tl.id like '%${search}%' order by t.id asc`;
 
       const { rows } = await client.query(queryString);
       return rows;

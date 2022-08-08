@@ -33,6 +33,7 @@ class OrderHandlers {
       payment_date,
       marking,
       quality,
+      is_auction,
       auction_date_start,
       auction_date_end,
       auction_time_start,
@@ -44,6 +45,11 @@ class OrderHandlers {
     const client = await this.db.connect();
 
     try {
+      if (!is_auction) {
+        auction_date_start = null;
+        auction_date_end = null;
+      }
+      console.log("-----test", auction_date_start, auction_date_end);
       const { rows } = await client.query(
         `insert into orders (
 					order_type, 
@@ -71,6 +77,7 @@ class OrderHandlers {
             payment_date,
             marking,
             quality,
+            is_auction,
             auction_date_start,
             auction_date_end,
             auction_time_start,
@@ -78,7 +85,7 @@ class OrderHandlers {
           cd,
 					user_id
 					) 
-					values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,$14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27,$28,$29,$30,$31) RETURNING id, order_type
+					values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,$14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27,$28,$29,$30,$31,$32) RETURNING id, order_type
 				`,
         [
           type,
@@ -106,10 +113,11 @@ class OrderHandlers {
           payment_date,
           marking,
           quality,
-          auction_date_start,
-          auction_date_end,
-          auction_time_start,
-          auction_time_end,
+          is_auction,
+          auction_date_start ? auction_date_start : null,
+          auction_date_end ? auction_date_end : null,
+          auction_time_start ? auction_time_start : null,
+          auction_time_end ? auction_time_end : null,
           cd,
           id,
         ]
@@ -147,6 +155,7 @@ class OrderHandlers {
       payment_date,
       marking,
       quality,
+      is_auction,
       auction_date_start,
       auction_date_end,
       auction_time_start,
@@ -182,12 +191,13 @@ class OrderHandlers {
           payment_date = $21,
           marking = $22,
           quality = $23,
-          auction_date_start = $24,
-          auction_date_end = $25,
-          auction_time_start = $26,
-          auction_time_end = $27,
-          cd = $28
-          where id = $29
+          is_auction = $24,
+          auction_date_start = $25,
+          auction_date_end = $26,
+          auction_time_start = $27,
+          auction_time_end = $28,
+          cd = $29
+          where id = $30
 				`,
         [
           category,
@@ -213,6 +223,7 @@ class OrderHandlers {
           payment_date,
           marking,
           quality,
+          is_auction,
           auction_date_start,
           auction_date_end,
           auction_time_start,
@@ -297,17 +308,19 @@ class OrderHandlers {
       const { rows } = await client.query(
         `select 
 				              o.* ,
-											 to_char(o.created_at, 'DD.MM.YYYY') as created_at,
-											 to_char(o.delivery_date, 'DD.MM.YYYY') as delivery_date,
-											 to_char(o.payment_date, 'DD.MM.YYYY') as payment_date,
+											 to_char(o.created_at, 'YYYY-MM-DD') as created_at,
+											 to_char(o.delivery_date, 'YYYY-MM-DD') as delivery_date,
+											 to_char(o.payment_date, 'YYYY-MM-DD') as payment_date,
 											 case when o.user_id = $1 then true else false end as own,
-                       case when 
-                      (current_date BETWEEN auction_date_start AND auction_date_end) 
-                      and 
-                      (now()::time(0) between auction_time_start and auction_time_end) then true 
-                      else false end as auction,
-                      to_char(o.auction_date_start, 'DD.MM.YYYY') as auction_date_start,
-                      to_char(o.auction_date_end, 'DD.MM.YYYY') as auction_date_end,
+                       
+                        case when 
+                        (current_date BETWEEN auction_date_start AND auction_date_end) 
+                        and 
+                        (now()::time(0) between auction_time_start and auction_time_end) then true 
+                        else false end as auction,
+
+                      to_char(o.auction_date_start, 'YYYY-MM-DD') as auction_date_start,
+                      to_char(o.auction_date_end, 'YYYY-MM-DD') as auction_date_end,
                        o.cd,
 											 ot.title as order_type_title,
 											 
@@ -381,17 +394,17 @@ class OrderHandlers {
       const { rows } = await client.query(
         `select 
                o.*, 
-               to_char("created_at", 'DD.MM.YYYY') as created_at,
-               to_char(o.delivery_date, 'DD.MM.YYYY') as delivery_date,
-							 to_char(o.payment_date, 'DD.MM.YYYY') as payment_date,
+               to_char("created_at", 'YYYY-MM-DD') as created_at,
+               to_char(o.delivery_date, 'YYYY-MM-DD') as delivery_date,
+							 to_char(o.payment_date, 'YYYY-MM-DD') as payment_date,
                case when 
                 (current_date BETWEEN auction_date_start AND auction_date_end) 
                 and 
                 (now()::time(0) between auction_time_start and auction_time_end) then true 
                 else false end as auction,
                o.cd,
-               to_char(o.auction_date_start, 'DD.MM.YYYY') as auction_date_start,
-               to_char(o.auction_date_end, 'DD.MM.YYYY') as auction_date_end,
+               to_char(o.auction_date_start, 'YYYY-MM-DD') as auction_date_start,
+               to_char(o.auction_date_end, 'YYYY-MM-DD') as auction_date_end,
                ot.title as order_type_title,
                os.title as status_title,
 							 oc.title as category,

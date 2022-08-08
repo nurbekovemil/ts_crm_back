@@ -72,7 +72,7 @@ class DealHandlers {
          inner join users ut on deals.user_to = ut.id
          where ${
            status == 2
-             ? "(deals.status = 2 or deals.status = 4 or deals.status = 5)"
+             ? "(deals.status = 2 or deals.status = 4 or deals.status = 5 or deals.status = 6)"
              : "(deals.status = 1 or deals.status = 3)"
          } and (user_from = $1 or user_to = $1)
          order by created_at desc
@@ -188,6 +188,9 @@ class DealHandlers {
          od.title as delivery,
          op.title as payment,
          ow.title as weight,
+         cu.symbol as currency_symbol,
+         to_char(o.auction_date_start, 'DD.MM.YYYY') as auction_date_start,
+        to_char(o.auction_date_end, 'DD.MM.YYYY') as auction_date_end,
 		 jsonb_agg(img.*) as images
          from deals d
          inner join orders o on d.order_from = o.id or d.order_to = o.id
@@ -197,6 +200,7 @@ class DealHandlers {
          inner join order_deliveries as od on o.delivery = od.id
          inner join order_payments as op on o.payment = op.id
          inner join order_weights as ow on o.weight = ow.id 
+         inner join order_currencies as cu on o.currency = cu.id
 		 left join path_images as img on o.id = img.order_id
          where d.id = $1
 		group by 
@@ -206,7 +210,8 @@ class DealHandlers {
          oc.title,
          od.title,
          op.title,
-         ow.title
+         ow.title,
+         cu.symbol
 				 `,
         [deal_id, user_id]
       );
@@ -265,8 +270,8 @@ class DealHandlers {
       }
       return {
         message:
-          status == 2 || status == 1 || status == 5
-            ? "Предложение принято!"
+          status == 2 || status == 1 || status == 5 || status == 6
+            ? "Статус успешно изменен!"
             : "Предложение отклонен!",
       };
     } catch (error) {
@@ -383,7 +388,7 @@ class DealHandlers {
          inner join deal_status on deals.status = deal_status.id
          inner join users uf on deals.user_from = uf.id
          inner join users ut on deals.user_to = ut.id
-         where (deals.status = 2 or deals.status = 4 or deals.status = 5) and deals.cd = true
+         where (deals.status = 2 or deals.status = 4 or deals.status = 6) and deals.cd = true
          order by created_at desc
          `
       );

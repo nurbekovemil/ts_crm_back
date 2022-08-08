@@ -26,6 +26,7 @@ export type createOrderReguest = FastifyRequest<{
     payment_date: string;
     marking: string;
     quality: string;
+    is_auction: string;
     auction_date_start: string;
     auction_date_end: string;
     auction_time_start: string;
