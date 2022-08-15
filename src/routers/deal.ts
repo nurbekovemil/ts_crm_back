@@ -25,7 +25,7 @@ const dealRouters = async (app) => {
 
   app.get("/trade-list/:date", {}, getTrageList);
 
-  app.get("/depo-deals", { preHandler: [verifyUserAuth] }, getDepoDeals);
+  app.get("/depo-deals/:date", { preHandler: [verifyUserAuth] }, getDepoDeals);
 
   app.delete("/:id", { preHandler: [verifyUserAuth] }, deleteOfferById);
 };
@@ -80,6 +80,6 @@ async function getTrageList(req) {
 }
 
 async function getDepoDeals(req) {
-  return await this.dealHandlers.getDepoDeals();
+  return await this.dealHandlers.getDepoDeals(req.params);
 }
 export default dealRouters;

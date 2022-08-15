@@ -77,7 +77,6 @@ async function userLogin(req: userBodyReguest): Promise<userLoginResponse> {
 
 async function userCreate(req: userBodyReguest): Promise<userMessageResponse> {
   const { username, password, type, role } = req.body;
-  console.log(req.body);
   return await this.userHandlers.userCreate(username, password, type, role);
 }
 

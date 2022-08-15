@@ -77,7 +77,6 @@ async function getOrderByIdPublic(req) {
 
 // ******Order handlers*******
 async function createOrder(req: createOrderReguest, reply) {
-  console.log(req.body);
   const rows = await this.orderHandlers.createOrder(req.body, req.user);
   if (Object.keys(req.files).length != 0) {
     await this.orderHandlers.createImage(req.files, rows.id);

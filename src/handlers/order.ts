@@ -45,11 +45,6 @@ class OrderHandlers {
     const client = await this.db.connect();
 
     try {
-      if (!is_auction) {
-        auction_date_start = null;
-        auction_date_end = null;
-      }
-      console.log("-----test", auction_date_start, auction_date_end);
       const { rows } = await client.query(
         `insert into orders (
 					order_type, 
@@ -114,10 +109,18 @@ class OrderHandlers {
           marking,
           quality,
           is_auction,
-          auction_date_start ? auction_date_start : null,
-          auction_date_end ? auction_date_end : null,
-          auction_time_start ? auction_time_start : null,
-          auction_time_end ? auction_time_end : null,
+          auction_date_start != "" && auction_date_start != "null"
+            ? auction_date_start
+            : "2000-01-01",
+          auction_date_end != "" && auction_date_end != "null"
+            ? auction_date_end
+            : "2000-01-01",
+          auction_time_start != "" && auction_time_start != "null"
+            ? auction_time_start
+            : "01:00:00",
+          auction_time_end != "" && auction_time_end != "null"
+            ? auction_time_end
+            : "01:00:00",
           cd,
           id,
         ]
@@ -245,7 +248,6 @@ class OrderHandlers {
   async createImage({ images, certificate }, id) {
     const client = await this.db.connect();
     try {
-      console.log("files --- ", images, certificate);
       const queryStringOrderPath =
         "insert into path_images (order_id, path) values ($1, $2)";
       const queryStringOrderCertificatePath =

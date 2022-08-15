@@ -301,9 +301,7 @@ class UserHandlers {
       if (user.rowCount > 0) {
         throw new Error(`Пользователь ${data.login} уже существует!`);
       }
-      console.log(data);
       if (data.login && data.login != "") {
-        console.log("check", data);
         const hashPassword: string = await bcrypt.hash(data.password, 5);
         await client.query(
           "update users set username = $1, password = $2, status = $3 where id = $4",

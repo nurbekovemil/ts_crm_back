@@ -271,7 +271,7 @@ class DealHandlers {
       return {
         message:
           status == 2 || status == 1 || status == 5 || status == 6
-            ? "Статус успешно изменен!"
+            ? "Принято!"
             : "Предложение отклонен!",
       };
     } catch (error) {
@@ -355,7 +355,7 @@ class DealHandlers {
       inner join orders o_t on o_t.id = d.order_to
       inner join order_weights as ow on o_f.weight = ow.id 
       inner join order_currencies on order_currencies.id = o_f.currency
-      where d.status = 2 and d.created_at >= NOW() - INTERVAL '${date} day'
+      where d.status in (2,5,6) and d.created_at >= NOW() - INTERVAL '${date} day'
       `);
       return rows;
     } catch (error) {
@@ -365,7 +365,7 @@ class DealHandlers {
     }
   }
 
-  async getDepoDeals() {
+  async getDepoDeals({ date }) {
     const client = await this.db.connect();
     try {
       const { rows } = await client.query(
@@ -388,7 +388,7 @@ class DealHandlers {
          inner join deal_status on deals.status = deal_status.id
          inner join users uf on deals.user_from = uf.id
          inner join users ut on deals.user_to = ut.id
-         where (deals.status = 2 or deals.status = 4 or deals.status = 6) and deals.cd = true
+         where (deals.status in (2,4,6) and deals.cd = true) and deals.created_at >= NOW() - INTERVAL '${date} day'
          order by created_at desc
          `
       );
