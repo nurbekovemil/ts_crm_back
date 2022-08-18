@@ -252,7 +252,7 @@ class DealHandlers {
             [order_from, order_to]
           );
           await client.query(
-            "update deals set status = 3 where id <> $1 and order_to = $2 and status <> 2",
+            "update deals set status = 6 where id <> $1 and order_to = $2 and status <> 2",
             [deal_id, order_to]
           );
         } else {
