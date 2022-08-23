@@ -24,6 +24,7 @@ const dealRouters = async (app) => {
   app.get("/history/", {}, getOfferHistory);
 
   app.get("/trade-list/:date", {}, getTrageList);
+  app.get("/trade/:id", {}, getTradeById);
 
   app.get("/depo-deals/:date", { preHandler: [verifyUserAuth] }, getDepoDeals);
 
@@ -77,6 +78,10 @@ async function deleteOfferById(req) {
 
 async function getTrageList(req) {
   return await this.dealHandlers.getTrageList(req.params);
+}
+
+async function getTradeById(req) {
+  return await this.dealHandlers.getTradeById(req.params);
 }
 
 async function getDepoDeals(req) {

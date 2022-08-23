@@ -315,7 +315,7 @@ class OrderHandlers {
 											 to_char(o.payment_date, 'YYYY-MM-DD') as payment_date,
 											 case when o.user_id = $1 then true else false end as own,
                        
-                        case when 
+                      case when 
                         (current_date BETWEEN auction_date_start AND auction_date_end) 
                         and 
                         (now()::time(0) between auction_time_start and auction_time_end) then true 

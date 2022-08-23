@@ -11,6 +11,22 @@ class DealHandlers {
     try {
       let deal_status = 1;
       let cd = false;
+      const orderfrom = await client.query(
+        "select * from orders where id = $1",
+        [order_from]
+      );
+      const orderto = await client.query("select * from orders where id = $1", [
+        order_to,
+      ]);
+      if (
+        orderfrom.rows[0].amount == orderto.rows[0].amount &&
+        orderfrom.rows[0].price == orderto.rows[0].price
+      ) {
+        deal_status = 6;
+        await client.query("update orders set status = 3 where id = $1", [
+          order_to,
+        ]);
+      }
       const { rows } = await client.query(
         `select * from deals where  user_from = $1 and user_to = $2 and order_from = $3 and order_to = $4`,
         [user_from, user_to, order_from, order_to]
@@ -20,12 +36,8 @@ class DealHandlers {
           message: "Вы уже отправили предложение!",
         };
       }
-      const isCD = await client.query(
-        "select cd from orders where id = $1 and cd = true",
-        [order_to]
-      );
       // проверка на "Клиринговый расчет"
-      if (isCD.rows.length > 0 && isCD.rows[0].cd == true) {
+      if (orderto.rows.length > 0 && orderto.rows[0].cd == true) {
         cd = true;
       }
       await client.query(
@@ -365,6 +377,65 @@ class DealHandlers {
     }
   }
 
+  async getTradeById({ id }) {
+    const client = await this.db.connect();
+    try {
+      const { rows } = await client.query(
+        `            
+        select 
+        d.*, 
+        to_char(d.created_at, 'DD.MM.YYYY') as created_at,
+        u_f.username as user_from_name,
+        u_t.username as user_to_name,
+        u_f.info as user_from_info,
+        u_t.info as user_to_info,
+        ds.title as status_title, 
+        ds.color as status_color,
+        o_f.order_type as order_type_from,
+        o_f.title,
+        o_f.cost,
+        o_f.amount,
+        o_f.price,
+        o_f.description,
+        o_f.special_conditions,
+        o_f.packing_form,
+        o_f.country,
+        o_f.code_tnved,
+        o_f.product_location,
+        o_f.delivery_date,
+        o_f.payment_date,
+        o_f.marking,
+        o_f.quality,
+        oc.title category,
+        od.title delivery,
+        op.title payment,
+        ow.title weight,
+        order_currencies.symbol as currency_symbol,
+        order_currencies.title as currency_title,
+        o_t.order_type as order_type_to
+        from deals d 
+        inner join deal_status ds on ds.id = d.status 
+        inner join users u_f on d.user_from = u_f.id 
+        inner join users u_t on d.user_to = u_t.id
+        inner join orders o_f on o_f.id = d.order_from
+        inner join orders o_t on o_t.id = d.order_to
+        inner join order_categories as oc on o_f.category = oc.id
+        inner join order_deliveries as od on o_f.delivery = od.id
+        inner join order_payments as op on o_f.payment = op.id
+        inner join order_weights as ow on o_f.weight = ow.id 
+        inner join order_currencies on order_currencies.id = o_f.currency
+        where d.id = $1
+         `,
+        [id]
+      );
+      const comments = await this.getDealComments(id);
+      return { deal: rows[0], comments };
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
   async getDepoDeals({ date }) {
     const client = await this.db.connect();
     try {
