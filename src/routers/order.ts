@@ -41,6 +41,7 @@ const orderRouters = async (app) => {
   app.get("/public/type/", {}, getOrderListHomePage); // get Order list for home page
   app.get("/public/:id", {}, getOrderByIdPublic);
 
+  app.post("/private/copy", { preHandler: [verifyUserAuth] }, copyOrder);
   app.post(
     "/file",
     {
@@ -122,6 +123,13 @@ async function getAllOrderList(req) {
   let offset: number = page * limit - limit;
   return await this.orderHandlers.getAllOrderList(role, id, limit, offset);
 }
+
+async function copyOrder(req) {
+  const { id } = req.body;
+
+  return await this.orderHandlers.copyOrder(id);
+}
+
 async function getOptions(req) {
   const { option } = req.query;
   return await this.orderHandlers.getOptions(option);

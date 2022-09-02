@@ -679,6 +679,40 @@ class OrderHandlers {
     }
   }
   async updateOrderImage(order_id) {}
+
+  async copyOrder(order_id) {
+    const client = await this.db.connect();
+    try {
+      const { rows } = await client.query(
+        `
+        INSERT INTO orders( 
+          order_type, title, description, status, 
+          cost, amount, user_id, price, 
+          category, delivery, payment, weight, delivery_date,
+         nds, gost, warranty, packing_form, special_conditions, country,
+         product_location, code_tnved, lot, currency, cd, marking, payment_date, quality, auction_date_start, auction_date_end,
+         auction_time_start, auction_time_end, is_auction
+       )
+       SELECT order_type, CONCAT(title, ' (Дублировано)'), description, '1', 
+          cost, amount, user_id, price, 
+          category, delivery, payment, weight, delivery_date,
+         nds, gost, warranty, packing_form, special_conditions, country,
+         product_location, code_tnved, lot, currency, cd, marking, payment_date, quality, auction_date_start, auction_date_end,
+         auction_time_start, auction_time_end, is_auction
+       
+       FROM orders WHERE id=$1;
+        `,
+        [order_id]
+      );
+      return {
+        message: "Успешно дублирован!",
+      };
+    } catch (error) {
+      return error;
+    } finally {
+      client.release();
+    }
+  }
 }
 
 export default OrderHandlers;

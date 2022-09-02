@@ -22,7 +22,7 @@ class DealHandlers {
         orderfrom.rows[0].amount == orderto.rows[0].amount &&
         orderfrom.rows[0].price == orderto.rows[0].price
       ) {
-        deal_status = 6;
+        deal_status = 5;
         await client.query("update orders set status = 3 where id = $1", [
           order_to,
         ]);
