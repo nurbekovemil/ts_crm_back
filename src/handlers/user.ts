@@ -240,7 +240,7 @@ class UserHandlers {
     }
   }
 
-  async gerUserRegisterTemplate(type) {
+  async getUserRegisterTemplate(type) {
     const client = await this.db.connect();
     try {
       const { rows } = await client.query(
@@ -303,9 +303,29 @@ class UserHandlers {
       }
       if (data.login && data.login != "") {
         const hashPassword: string = await bcrypt.hash(data.password, 5);
-        await client.query(
-          "update users set username = $1, password = $2, status = $3 where id = $4",
-          [data.login, hashPassword, data.status, data.user_id]
+        const login_access = JSON.stringify({
+          id: "data_for_access",
+          items: [
+            {
+              type: "input",
+              field: "login",
+              title: "Логин",
+              value: data.login,
+              required: false,
+            },
+            {
+              type: "input",
+              field: "password",
+              title: "Пароль",
+              value: data.password,
+              required: false,
+            },
+          ],
+          title: "Данные для доступа к электронной системе торгов",
+        });
+        const { rows } = await client.query(
+          "update users set username = $1, password = $2, status = $3, info = info|| $5::jsonb where id = $4",
+          [data.login, hashPassword, data.status, data.user_id, login_access]
         );
       } else {
         await client.query("update users set status = $1 where id = $2", [
@@ -329,13 +349,14 @@ class UserHandlers {
     }
   }
 
-  async updateUserData({ id, info }) {
+  async updateUserData({ id, info, login, password }) {
     const client = await this.db.connect();
     try {
-      await client.query("update users set info = $1 where id = $2", [
-        info,
-        id,
-      ]);
+      const hashPassword: string = await bcrypt.hash(password, 5);
+      await client.query(
+        "update users set info = $1, username = $3, password = $4 where id = $2",
+        [info, id, login, hashPassword]
+      );
 
       return {
         message: `Данные успешно обновлен!`,

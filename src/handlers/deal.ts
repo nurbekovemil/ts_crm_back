@@ -10,7 +10,7 @@ class DealHandlers {
     const client = await this.db.connect();
     try {
       let deal_status = 1;
-      let cd = false;
+      // let cd = false;
       const orderfrom = await client.query(
         "select * from orders where id = $1",
         [order_from]
@@ -19,10 +19,12 @@ class DealHandlers {
         order_to,
       ]);
       if (
+        !orderfrom.rows[0].is_auction &&
         orderfrom.rows[0].amount == orderto.rows[0].amount &&
         orderfrom.rows[0].price == orderto.rows[0].price
       ) {
         deal_status = 5;
+
         await client.query("update orders set status = 3 where id = $1", [
           order_to,
         ]);
@@ -37,13 +39,13 @@ class DealHandlers {
         };
       }
       // проверка на "Клиринговый расчет"
-      if (orderto.rows.length > 0 && orderto.rows[0].cd == true) {
-        cd = true;
-      }
+      // if (orderto.rows.length > 0 && orderto.rows[0].cd == true) {
+      //   cd = true;
+      // }
       await client.query(
-        `insert into deals (user_from, user_to, order_from, order_to, status, cd) 
-				values($1, $2, $3, $4, $5, $6)`,
-        [user_from, user_to, order_from, order_to, deal_status, cd]
+        `insert into deals (user_from, user_to, order_from, order_to, status) 
+				values($1, $2, $3, $4, $5)`,
+        [user_from, user_to, order_from, order_to, deal_status]
       );
       await client.query("update orders set status = 8 where id = $1", [
         order_from,
@@ -243,20 +245,21 @@ class DealHandlers {
         [status, deal_id]
       );
       // после подтверждения закрываем заявки
-      if (status == 2) {
+      if (status == 5) {
         let { order_from, order_to } = rows[0];
 
-        // получаем количество и стоимость заявки отправителя
+        // получаем количество и стоимость заявки покупателя
         const orderfrom = await client.query(
           "select amount, cost from orders where id = $1",
           [order_from]
         );
 
-        // получаем количество и стоимость
+        // получаем количество и стоимость заяки продавца
         const orderto = await client.query(
           "select amount from orders where id = $1",
           [order_to]
         );
+
         // если количество больще чем или равно, тогда закрываем
         if (orderfrom.rows[0].amount >= orderto.rows[0].amount) {
           await client.query(
@@ -459,7 +462,7 @@ class DealHandlers {
          inner join deal_status on deals.status = deal_status.id
          inner join users uf on deals.user_from = uf.id
          inner join users ut on deals.user_to = ut.id
-         where (deals.status in (2,4,6) and deals.cd = true) and deals.created_at >= NOW() - INTERVAL '${date} day'
+         where deals.status in (2,4,6) and deals.created_at >= NOW() - INTERVAL '${date} day'
          order by created_at desc
          `
       );

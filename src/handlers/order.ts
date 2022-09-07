@@ -38,7 +38,6 @@ class OrderHandlers {
       auction_date_end,
       auction_time_start,
       auction_time_end,
-      cd,
     },
     { id }
   ) {
@@ -77,10 +76,9 @@ class OrderHandlers {
             auction_date_end,
             auction_time_start,
             auction_time_end,
-          cd,
 					user_id
 					) 
-					values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,$14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27,$28,$29,$30,$31,$32) RETURNING id, order_type
+					values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,$14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27,$28,$29,$30,$31) RETURNING id, order_type
 				`,
         [
           type,
@@ -121,7 +119,6 @@ class OrderHandlers {
           auction_time_end != "" && auction_time_end != "null"
             ? auction_time_end
             : "01:00:00",
-          cd,
           id,
         ]
       );
@@ -163,7 +160,6 @@ class OrderHandlers {
       auction_date_end,
       auction_time_start,
       auction_time_end,
-      cd,
     },
     order_id
   ) {
@@ -198,9 +194,8 @@ class OrderHandlers {
           auction_date_start = $25,
           auction_date_end = $26,
           auction_time_start = $27,
-          auction_time_end = $28,
-          cd = $29
-          where id = $30
+          auction_time_end = $28
+          where id = $29
 				`,
         [
           category,
@@ -231,7 +226,6 @@ class OrderHandlers {
           auction_date_end,
           auction_time_start,
           auction_time_end,
-          cd,
           order_id,
         ]
       );
@@ -323,7 +317,6 @@ class OrderHandlers {
 
                       to_char(o.auction_date_start, 'YYYY-MM-DD') as auction_date_start,
                       to_char(o.auction_date_end, 'YYYY-MM-DD') as auction_date_end,
-                       o.cd,
 											 ot.title as order_type_title,
 											 
 											 os.title as status_title,
@@ -404,7 +397,6 @@ class OrderHandlers {
                 and 
                 (now()::time(0) between auction_time_start and auction_time_end) then true 
                 else false end as auction,
-               o.cd,
                to_char(o.auction_date_start, 'YYYY-MM-DD') as auction_date_start,
                to_char(o.auction_date_end, 'YYYY-MM-DD') as auction_date_end,
                ot.title as order_type_title,
@@ -690,14 +682,14 @@ class OrderHandlers {
           cost, amount, user_id, price, 
           category, delivery, payment, weight, delivery_date,
          nds, gost, warranty, packing_form, special_conditions, country,
-         product_location, code_tnved, lot, currency, cd, marking, payment_date, quality, auction_date_start, auction_date_end,
+         product_location, code_tnved, lot, currency, marking, payment_date, quality, auction_date_start, auction_date_end,
          auction_time_start, auction_time_end, is_auction
        )
-       SELECT order_type, CONCAT(title, ' (Дублировано)'), description, '1', 
+       SELECT order_type, title, description, '1', 
           cost, amount, user_id, price, 
           category, delivery, payment, weight, delivery_date,
          nds, gost, warranty, packing_form, special_conditions, country,
-         product_location, code_tnved, lot, currency, cd, marking, payment_date, quality, auction_date_start, auction_date_end,
+         product_location, code_tnved, lot, currency, marking, payment_date, quality, auction_date_start, auction_date_end,
          auction_time_start, auction_time_end, is_auction
        
        FROM orders WHERE id=$1;

@@ -66,7 +66,7 @@ const userRouters = async (app: FastifyInstance) => {
     userDelete
   );
 
-  app.get("/template", {}, gerUserRegisterTemplate);
+  app.get("/template", {}, getUserRegisterTemplate);
 };
 //////Для ревью
 
@@ -118,9 +118,9 @@ async function userGetAllList(req): Promise<Array<userGetAllListResponse>> {
   return await this.userHandlers.userGetAllList(limit, offset, req.user.id);
 }
 
-async function gerUserRegisterTemplate(req) {
+async function getUserRegisterTemplate(req) {
   const { type } = req.query;
-  return await this.userHandlers.gerUserRegisterTemplate(type);
+  return await this.userHandlers.getUserRegisterTemplate(type);
 }
 
 async function getProfile(req) {

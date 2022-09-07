@@ -30,6 +30,11 @@ import CatalogHandlers from "./handlers/catalog";
 import dashboardRouters from "./routers/dashboard";
 import DashboardHandlers from "./handlers/dashboard";
 
+// report modules
+
+import reportRouters from "./routers/report";
+import ReportHandlers from "./handlers/report";
+
 const appInstance = (app, opt, done) => {
   const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -92,6 +97,7 @@ const appInstance = (app, opt, done) => {
   app.decorate("dealHandlers", new DealHandlers(app.pg, app.jwt));
   app.decorate("catalogHandlers", new CatalogHandlers(app.pg));
   app.decorate("dashboardHandlers", new DashboardHandlers(app.pg));
+  app.decorate("reportHandlers", new ReportHandlers(app.pg));
   done();
 };
 
@@ -150,6 +156,10 @@ const buildApp = (opt: FastifyServerOptions) => {
 
   app.register(dashboardRouters, {
     prefix: "/dashboard",
+  });
+
+  app.register(reportRouters, {
+    prefix: "/reports",
   });
 
   app.register(fastifyStatic, {
