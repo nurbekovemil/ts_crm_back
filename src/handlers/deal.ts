@@ -18,13 +18,27 @@ class DealHandlers {
       const orderto = await client.query("select * from orders where id = $1", [
         order_to,
       ]);
+      // Двойной встречный аукцион
       if (
         !orderfrom.rows[0].is_auction &&
-        orderfrom.rows[0].amount == orderto.rows[0].amount &&
-        orderfrom.rows[0].price == orderto.rows[0].price
+        orderfrom.rows[0].amount <= orderto.rows[0].amount
       ) {
         deal_status = 5;
 
+        await client.query("update orders set status = 3 where id = $1", [
+          order_to,
+        ]);
+      } else if (
+        !orderfrom.rows[0].is_auction &&
+        orderfrom.rows[0].amount > orderto.rows[0].amount
+      ) {
+        throw new Error(
+          `Вы можете купить меньше чем ${orderto.rows[0].amount} количество!`
+        );
+      }
+      // Стандартный аукцион
+      else if (orderfrom.rows[0].is_auction) {
+        deal_status = 1;
         await client.query("update orders set status = 3 where id = $1", [
           order_to,
         ]);

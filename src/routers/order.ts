@@ -117,11 +117,17 @@ async function getOrderByIdPrivate(req, reply) {
 }
 async function getAllOrderList(req) {
   const { id, role } = req.user;
-  let { page, limit } = req.query;
+  let { page, limit, type } = req.query;
   limit = limit || 10;
   page = page || 1;
   let offset: number = page * limit - limit;
-  return await this.orderHandlers.getAllOrderList(role, id, limit, offset);
+  return await this.orderHandlers.getAllOrderList(
+    role,
+    id,
+    limit,
+    offset,
+    type
+  );
 }
 
 async function copyOrder(req) {

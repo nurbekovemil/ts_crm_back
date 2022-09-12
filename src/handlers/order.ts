@@ -449,7 +449,7 @@ class OrderHandlers {
     }
   }
 
-  async getAllOrderList(role, id, limit, offset) {
+  async getAllOrderList(role, id, limit, offset, type) {
     const client = await this.db.connect();
     try {
       let queryString = `
@@ -481,12 +481,17 @@ class OrderHandlers {
             inner join order_weights as w
             on o.weight = w.id
          where ${
-           role == "ADMIN" ? " o.status in (1,2, 4, 3, 7)" : "o.status = 2"
-         }
+           role == "ADMIN" ? " o.status in (1,2,4,7)" : "o.status = 2"
+         } and o.order_type = $4
          order by o.status = 1 desc, o.created_at desc
          limit $2 offset $3
          `;
-      const { rows } = await client.query(queryString, [id, limit, offset]);
+      const { rows } = await client.query(queryString, [
+        id,
+        limit,
+        offset,
+        type,
+      ]);
       const order_count = await client.query(`
          select count(*) from orders where ${
            role == "ADMIN" ? " status = 1 or status = 2" : "status = 2"
