@@ -127,11 +127,24 @@ class CatalogHandlers {
   async getOrderTnved({ search }) {
     const client = await this.db.connect();
     try {
-      const queryString = `select t.id, tl.title from tnved t
-      inner join tnved_lang tl on tl.id = t.id and tl.lang = 'ru'
-      where tl.title like '%${
-        search && search.split(" ").join("_").toUpperCase()
-      }%' or tl.id like '%${search}%' order by t.id asc`;
+      // const queryString = `select t.id, tl.title from tnved t
+      // inner join tnved_lang tl on tl.id = t.id and tl.lang = 'ru'
+      // where tl.title like '%${
+      //   search && search.split(" ").join("_").toUpperCase()
+      // }%' or tl.id like '%${search}%' order by t.id asc`;
+
+      const queryString = `
+      select 
+      tl.id, 
+      tl.title 
+      from tnved_lang tl
+      where ${
+        !isNaN(Number(search))
+          ? `tl.id like '%${search}%'`
+          : `tl.title like '%${
+              search && search.split(" ").join("_").toUpperCase()
+            }%'`
+      } order by tl.id asc`;
 
       const { rows } = await client.query(queryString);
       return rows;
