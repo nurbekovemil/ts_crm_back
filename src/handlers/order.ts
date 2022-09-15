@@ -246,12 +246,12 @@ class OrderHandlers {
         "insert into path_images (order_id, path) values ($1, $2)";
       const queryStringOrderCertificatePath =
         "insert into order_certificates (order_id, path) values ($1, $2)";
-      if (images.length > 0) {
+      if (images) {
         images.map(({ path }) => {
           client.query(queryStringOrderPath, [id, path]);
         });
       }
-      if (certificate.length > 0) {
+      if (certificate) {
         certificate.map(({ path }) => {
           client.query(queryStringOrderCertificatePath, [id, path]);
         });
@@ -335,8 +335,8 @@ class OrderHandlers {
                        cu.title as currency,
                        cu.id as currency_id,
                        cu.symbol as currency_symbol,
-                       jsonb_agg(img.*) as images,
-                       jsonb_agg(o_cert.*) as cert
+                       jsonb_agg(distinct img.*) as images,
+                       jsonb_agg(distinct o_cert.*) as certificate
 											 
 											 from orders as o
 				
@@ -407,8 +407,8 @@ class OrderHandlers {
 							 op.title as payment,
 							 ow.title as weight,
                cur.symbol as currency_symbol,
-							 jsonb_agg(img.*) as images,
-               jsonb_agg(o_cert.*) as cert
+							 jsonb_agg(distinct img.*) as images,
+               jsonb_agg(distinct o_cert.*) as certificate
                from orders as o
                inner join order_types as ot
                on o.order_type = ot.id 
@@ -652,12 +652,14 @@ class OrderHandlers {
       client.release();
     }
   }
-  async deleteImage(id) {
+  async deleteImage({ img_id, field }) {
     const client = await this.db.connect();
     try {
       const { rows } = await client.query(
-        `delete from path_images where id = $1 returning path`,
-        [id]
+        `delete from ${
+          field == "images" ? "path_images" : "order_certificates"
+        } where id = $1 returning path`,
+        [img_id]
       );
       if (rows.length > 0) {
         rows.map((img) => {
@@ -667,7 +669,7 @@ class OrderHandlers {
         });
       }
       return {
-        message: "Изображение успешно удален!",
+        message: "Файл успешно удален!",
       };
     } catch (error) {
       return error;

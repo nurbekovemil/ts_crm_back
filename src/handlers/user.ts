@@ -81,9 +81,13 @@ class UserHandlers {
           return f;
         })
       );
-      await client.query(
-        "insert into users (username, password, role, status, type, info) values ($1, $2, $3, $4, $5, $6)",
+      const user_id = await client.query(
+        "insert into users (username, password, role, status, type, info) values ($1, $2, $3, $4, $5, $6) returning id",
         [username, hashPassword, role, 2, type, user_type]
+      );
+      await client.query(
+        "insert into user_accounts (user_id, count, currency, symbol)values($1, 0.00, 'сом', 'сом')",
+        [user_id.rows[0].id]
       );
       return {
         message: `Пользователь ${username} успешно создан!`,

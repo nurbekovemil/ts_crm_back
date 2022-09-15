@@ -14,7 +14,7 @@ const orderRouters = async (app) => {
         verifyUserAuth,
         app.upload.fields([
           { name: "images", maxCount: 16 },
-          { name: "certificate", maxCount: 10 },
+          { name: "certificate", maxCount: 16 },
         ]),
       ],
       // schema: createOrderSchema
@@ -59,16 +59,20 @@ const orderRouters = async (app) => {
   );
   app.put(
     "/private/image",
-    { preHandler: [verifyUserAuth, app.upload.array("images", 1)] },
+    {
+      preHandler: [
+        verifyUserAuth,
+        app.upload.fields([
+          { name: "images", maxCount: 16 },
+          { name: "certificate", maxCount: 16 },
+        ]),
+      ],
+    },
     uploadOrderImage
   );
 
   app.delete("/private/:id", { preHandler: [verifyUserAuth] }, deleteOrder);
-  app.delete(
-    "/private/image/:id",
-    { preHandler: [verifyUserAuth] },
-    deleteImage
-  );
+  app.post("/private/files", { preHandler: [verifyUserAuth] }, deleteImage);
 };
 
 async function getOrderByIdPublic(req) {
@@ -163,12 +167,11 @@ async function deleteOrder(req) {
 
 async function uploadOrderImage(req) {
   await this.orderHandlers.createImage(req.files, req.body.order_id);
-  return { message: "Изображение загружено!" };
+  return { message: "Файл загружен!" };
 }
 
 async function deleteImage(req) {
-  const { id } = req.params;
-  return await this.orderHandlers.deleteImage(id);
+  return await this.orderHandlers.deleteImage(req.body);
 }
 
 export default orderRouters;

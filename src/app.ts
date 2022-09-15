@@ -35,6 +35,11 @@ import DashboardHandlers from "./handlers/dashboard";
 import reportRouters from "./routers/report";
 import ReportHandlers from "./handlers/report";
 
+// transaction modules
+
+import transactionRouters from "./routers/transaction";
+import TransactionHandlers from "./handlers/transaction";
+
 const appInstance = (app, opt, done) => {
   const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -52,6 +57,9 @@ const appInstance = (app, opt, done) => {
       storage: storage,
       fileFilter: (req, file, cb) => {
         if (
+          file.mimetype == "application/msword" ||
+          file.mimetype ==
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
           file.mimetype == "image/png" ||
           file.mimetype == "image/jpg" ||
           file.mimetype == "image/jpeg" ||
@@ -98,6 +106,7 @@ const appInstance = (app, opt, done) => {
   app.decorate("catalogHandlers", new CatalogHandlers(app.pg));
   app.decorate("dashboardHandlers", new DashboardHandlers(app.pg));
   app.decorate("reportHandlers", new ReportHandlers(app.pg));
+  app.decorate("transactionHandlers", new TransactionHandlers(app.pg));
   done();
 };
 
@@ -160,6 +169,10 @@ const buildApp = (opt: FastifyServerOptions) => {
 
   app.register(reportRouters, {
     prefix: "/reports",
+  });
+
+  app.register(transactionRouters, {
+    prefix: "/transfers",
   });
 
   app.register(fastifyStatic, {

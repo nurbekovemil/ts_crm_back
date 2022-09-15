@@ -255,25 +255,23 @@ class DealHandlers {
     const client = await this.db.connect();
     try {
       const { rows } = await client.query(
-        "update deals set status = $1 where id = $2 returning order_from, order_to",
+        "update deals set status = $1 where id = $2 returning *",
         [status, deal_id]
       );
+      let { order_from, order_to, user_from, user_to, id } = rows[0];
+      // получаем количество и стоимость заявки покупателя
+      const orderfrom = await client.query(
+        "select amount, cost from orders where id = $1",
+        [order_from]
+      );
+
+      // получаем количество и стоимость заяки продавца
+      const orderto = await client.query(
+        "select amount from orders where id = $1",
+        [order_to]
+      );
       // после подтверждения закрываем заявки
-      if (status == 5) {
-        let { order_from, order_to } = rows[0];
-
-        // получаем количество и стоимость заявки покупателя
-        const orderfrom = await client.query(
-          "select amount, cost from orders where id = $1",
-          [order_from]
-        );
-
-        // получаем количество и стоимость заяки продавца
-        const orderto = await client.query(
-          "select amount from orders where id = $1",
-          [order_to]
-        );
-
+      if (status === 5) {
         // если количество больще чем или равно, тогда закрываем
         if (orderfrom.rows[0].amount >= orderto.rows[0].amount) {
           await client.query(
@@ -296,6 +294,17 @@ class DealHandlers {
             order_from,
           ]);
         }
+      } else if (status === 2) {
+        // create transaction
+        let queryString = `insert into transactions (type, user_from, user_to, amount, status, deal_id) values ($1, $2, $3, $4, $5, $6)`;
+        await client.query(queryString, [
+          3,
+          user_from,
+          user_to,
+          orderfrom.rows[0].cost,
+          1,
+          id,
+        ]);
       }
       return {
         message:
