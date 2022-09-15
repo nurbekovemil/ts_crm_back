@@ -305,8 +305,8 @@ class OrderHandlers {
         `select 
 				              o.* ,
 											 to_char(o.created_at, 'YYYY-MM-DD') as created_at,
-											 to_char(o.delivery_date, 'YYYY-MM-DD') as delivery_date,
-											 to_char(o.payment_date, 'YYYY-MM-DD') as payment_date,
+											 o.delivery_date,
+											 o.payment_date,
 											 case when o.user_id = $1 then true else false end as own,
                        
                       case when 
@@ -390,8 +390,8 @@ class OrderHandlers {
         `select 
                o.*, 
                to_char("created_at", 'YYYY-MM-DD') as created_at,
-               to_char(o.delivery_date, 'YYYY-MM-DD') as delivery_date,
-							 to_char(o.payment_date, 'YYYY-MM-DD') as payment_date,
+               o.delivery_date,
+							 o.payment_date,
                case when 
                 (current_date BETWEEN auction_date_start AND auction_date_end) 
                 and 
