@@ -142,7 +142,7 @@ const buildApp = (opt: FastifyServerOptions) => {
       badRequestErrorMessage: "Формат: Authorization Bearer [токен]",
       noAuthorizationInHeaderMessage: "Заголовок авторизации отсутствует!",
       authorizationTokenExpiredMessage:
-        "Ваша сессия истека, повторите попытку авторизации",
+        "Ваша сессия истекла, повторите попытку авторизации",
       authorizationTokenInvalid: (err) => {
         return `Токен авторизации недействителен: ${err.message}`;
       },
