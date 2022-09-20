@@ -115,6 +115,7 @@ const buildApp = (opt: FastifyServerOptions) => {
 
   const { user, password, host, database } = config.database;
   const { secretkey } = config.server;
+
   app.register(multer.contentParser);
   app.register(fastifyPostgres, {
     connectionString: `postgres://${user}:${password}@${host}/${database}`,
@@ -141,7 +142,7 @@ const buildApp = (opt: FastifyServerOptions) => {
       badRequestErrorMessage: "Формат: Authorization Bearer [токен]",
       noAuthorizationInHeaderMessage: "Заголовок авторизации отсутствует!",
       authorizationTokenExpiredMessage:
-        "Срок действия токена авторизации истек",
+        "Ваша сессия истека, повторите попытку авторизации",
       authorizationTokenInvalid: (err) => {
         return `Токен авторизации недействителен: ${err.message}`;
       },

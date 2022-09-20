@@ -2,13 +2,12 @@ import { FastifyServerOptions } from "fastify";
 import buildApp from "./app";
 import config from "./config";
 
-
 const options: FastifyServerOptions = {
-   logger: true
-}
+  logger: true,
+};
 
-const {port} = config.server
+const { port } = config.server;
 
-const app = buildApp(options)
+const app = buildApp(options);
 
-app.listen(port)
+app.listen(port);

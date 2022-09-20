@@ -10,6 +10,7 @@ class DealHandlers {
     const client = await this.db.connect();
     try {
       let deal_status = 1;
+
       // let cd = false;
       const orderfrom = await client.query(
         "select * from orders where id = $1",

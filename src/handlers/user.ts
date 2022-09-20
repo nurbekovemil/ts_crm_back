@@ -103,9 +103,13 @@ class UserHandlers {
     const client = await this.db.connect();
     try {
       const { user_type, data } = user_data;
-      await client.query(
-        "insert into users (role, status, type, info) values ($1, $2, $3, $4)",
+      const { rows } = await client.query(
+        "insert into users (role, status, type, info) values ($1, $2, $3, $4) returning id",
         [2, 1, user_type, data]
+      );
+      await client.query(
+        "insert into user_accounts (user_id, count, currency, symbol)values($1, 0.00, 'сом', 'сом')",
+        [rows[0].id]
       );
       return {
         message: "Регистрация прошло успешно, ваши данные обрабатывается!",
@@ -273,6 +277,8 @@ class UserHandlers {
         ut.id as type,
         us.title as status_title,
         us.color as status_color,
+        uc.count,
+        uc.symbol,
         case when u.id = $2 then true else false end as me,
         count(distinct o.id) as user_orders,
         count(distinct d.id) as user_deals,
@@ -282,9 +288,10 @@ class UserHandlers {
         left join deals d on (u.id = d.user_from or u.id = d.user_to) and d.status = 2
         left join deals ofr on (u.id = ofr.user_from or u.id = ofr.user_to) and ofr.status = 1
         left join user_types ut on ut.id = u.type
-		inner join user_status us on u.status = us.id
+		    inner join user_status us on u.status = us.id
+        inner join user_accounts uc on uc.user_id = u.id
         where u.id = $1
-        group by u.id, us.id, ut.title, ut.id`,
+        group by u.id, us.id, ut.title, ut.id, uc.count, uc.symbol`,
         [user_id, me_id]
       );
       return rows[0];
