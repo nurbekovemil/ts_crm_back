@@ -160,6 +160,7 @@ class OrderHandlers {
       auction_date_end,
       auction_time_start,
       auction_time_end,
+      nds,
     },
     order_id
   ) {
@@ -194,8 +195,9 @@ class OrderHandlers {
           auction_date_start = $25,
           auction_date_end = $26,
           auction_time_start = $27,
-          auction_time_end = $28
-          where id = $29
+          auction_time_end = $28,
+          nds = $29
+          where id = $30
 				`,
         [
           category,
@@ -226,6 +228,7 @@ class OrderHandlers {
           auction_date_end,
           auction_time_start,
           auction_time_end,
+          nds,
           order_id,
         ]
       );
