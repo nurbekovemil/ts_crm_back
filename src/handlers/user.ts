@@ -10,7 +10,15 @@ class UserHandlers {
     const client = await this.db.connect();
     try {
       const user = await client.query(
-        "select u.*, r.role as user_role from users u inner join roles r on r.id = u.role where u.username = $1",
+        `
+        select 
+        u.*, 
+        r.role as user_role,
+        uc.count
+        from users u 
+        inner join roles r on r.id = u.role 
+        inner join user_accounts uc on uc.user_id = u.id
+        where u.username = $1`,
         [username]
       );
       if (user.rowCount == 0) {
@@ -44,6 +52,7 @@ class UserHandlers {
         user: {
           username: user.rows[0].username,
           role: user.rows[0].user_role,
+          count: user.rows[0].count,
         },
         menus: userMenu.rows,
         token,
@@ -127,10 +136,12 @@ class UserHandlers {
       const user = await client.query(
         `
             select 
-               u.*, r.role as user_role
+               u.*, r.role as user_role,
+               uc.count
             from users u 
             inner join roles r 
             on r.id = u.role 
+            inner join user_accounts uc on uc.user_id = u.id
             where u.id = $1`,
         [id]
       );
@@ -149,6 +160,7 @@ class UserHandlers {
         user: {
           username: user.rows[0].username,
           role: user.rows[0].user_role,
+          count: user.rows[0].count,
         },
         menus: userMenu.rows,
       };

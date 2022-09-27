@@ -158,7 +158,7 @@ class TransactionHandlers {
         );
 
       if ((status == 2 && type == 3) || (status == 2 && type == 1)) {
-        if (userfrom.role == "USER" && userfrom.count < amount) {
+        if (userfrom.role == "USER" && userfrom.count < amount && type == 3) {
           throw new Error(
             `${userfrom.username} недостаточно средств для перевода!`
           );

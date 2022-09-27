@@ -28,6 +28,9 @@ export const userBodyRequestLoginSchema = {
             role: {
               type: "string",
             },
+            count: {
+              type: "string",
+            },
           },
         },
         menus: {

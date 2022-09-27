@@ -10,7 +10,14 @@ class DealHandlers {
     const client = await this.db.connect();
     try {
       let deal_status = 1;
-
+      let userfromaccount = await client.query(
+        ` select uc.*, u.username, r.role
+          from user_accounts uc
+          inner join users u on u.id = uc.user_id
+          inner join roles r on r.id = u.role
+          where uc.user_id = $1`,
+        [user_from]
+      );
       // let cd = false;
       const orderfrom = await client.query(
         "select * from orders where id = $1",
@@ -19,6 +26,10 @@ class DealHandlers {
       const orderto = await client.query("select * from orders where id = $1", [
         order_to,
       ]);
+      if (userfromaccount.rows[0].count < orderto.rows[0].cost) {
+        await client.query("delete from orders where id = $1", [order_from]);
+        throw new Error(`У вас недостаточно средств для предложения!`);
+      }
       // Двойной встречный аукцион
       if (
         !orderfrom.rows[0].is_auction &&
@@ -53,10 +64,6 @@ class DealHandlers {
           message: "Вы уже отправили предложение!",
         };
       }
-      // проверка на "Клиринговый расчет"
-      // if (orderto.rows.length > 0 && orderto.rows[0].cd == true) {
-      //   cd = true;
-      // }
       await client.query(
         `insert into deals (user_from, user_to, order_from, order_to, status) 
 				values($1, $2, $3, $4, $5)`,
@@ -296,14 +303,32 @@ class DealHandlers {
           ]);
         }
       } else if (status === 2) {
-        // create transaction
+        let transfer_status = 1;
+        let userfrom = await client.query(
+          ` select uc.*, u.username, r.role
+            from user_accounts uc
+            inner join users u on u.id = uc.user_id
+            inner join roles r on r.id = u.role
+            where uc.user_id = $1`,
+          [user_from]
+        );
+        const updateUserAccounts = async (user_id, action, total) =>
+          await client.query(
+            `update user_accounts set count = count ${action} '${total}' where user_id = ${user_id}`
+          );
+        if (userfrom.rows[0].count > orderfrom.rows[0].cost) {
+          transfer_status = 2;
+          await updateUserAccounts(user_from, "-", orderfrom.rows[0].cost);
+          await updateUserAccounts(user_to, "+", orderfrom.rows[0].cost);
+        }
+        // create transaction after confirm
         let queryString = `insert into transactions (type, user_from, user_to, amount, status, deal_id) values ($1, $2, $3, $4, $5, $6)`;
         await client.query(queryString, [
           3,
           user_from,
           user_to,
           orderfrom.rows[0].cost,
-          1,
+          transfer_status,
           id,
         ]);
       }
