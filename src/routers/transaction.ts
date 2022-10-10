@@ -25,7 +25,10 @@ async function getUserAccounts(req) {
 }
 
 async function getAllTransactionList(req) {
-  return await this.transactionHandlers.getAllTransactionList(req.user);
+  return await this.transactionHandlers.getAllTransactionList(
+    req.user,
+    req.query
+  );
 }
 
 async function updateTransactionStatus(req) {

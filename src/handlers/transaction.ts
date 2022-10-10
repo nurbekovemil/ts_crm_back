@@ -32,21 +32,21 @@ class TransactionHandlers {
       client.release();
     }
   }
-  async getMyTransactionList({ id }) {
-    const client = await this.db.connect();
-    try {
-      const { rows } = await client.query(`
-        select 
-        
-        from transactions t
-        where 
-      `);
-    } catch (error) {
-      return error;
-    } finally {
-      client.release();
-    }
-  }
+  // async getMyTransactionList({ id }) {
+  //   const client = await this.db.connect();
+  //   try {
+  //     const { rows } = await client.query(`
+  //       select
+
+  //       from transactions t
+  //       where
+  //     `);
+  //   } catch (error) {
+  //     return error;
+  //   } finally {
+  //     client.release();
+  //   }
+  // }
 
   async getTransactionById({ id }) {
     const client = await this.db.connect();
@@ -99,9 +99,13 @@ class TransactionHandlers {
       client.release();
     }
   }
-  async getAllTransactionList({ id, role }) {
+  async getAllTransactionList(
+    { id, role },
+    { date_from, date_to, page, limit }
+  ) {
     const client = await this.db.connect();
     try {
+      let offset: number = page * limit - limit;
       const queryString = `
       select 
       t.*,
@@ -117,10 +121,16 @@ class TransactionHandlers {
       inner join transaction_types tt on tt.id = t.type
       inner join transaction_status ts on ts.id = t.status
       ${role == "USER" ? `where t.user_from = ${id} or t.user_to = ${id}` : ""}
+      ${date_from.trim() != "" ? ` and t.created_at >= '${date_from}'` : ""}
+      ${date_to.trim() != "" ? ` and t.created_at <= '${date_to}'` : ""}
+      limit ${limit} offset ${offset}
       `;
-      console.log(queryString);
       const { rows } = await client.query(queryString);
-      return rows;
+      const count = await client.query("select count(*) from transactions");
+      return {
+        list: rows,
+        count: count.rows[0].count,
+      };
     } catch (error) {
       return error;
     } finally {

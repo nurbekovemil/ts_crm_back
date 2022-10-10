@@ -207,9 +207,27 @@ class UserHandlers {
   async userDelete(id) {
     const client = await this.db.connect();
     try {
+      await client.query(
+        "delete from user_accounts where user_id = $1",
+        [id],
+        (err) => {
+          if (err) {
+            throw new Error("Ошибка при удалении счета пользователя!");
+          }
+        }
+      );
+      await client.query(
+        "delete from transactions where user_from = $1 or user_to = $1",
+        [id],
+        (err) => {
+          if (err) {
+            throw new Error("Ошибка при удалении транзакции пользователя!");
+          }
+        }
+      );
       await client.query("delete from users where id = $1", [id], (err) => {
         if (err) {
-          throw new Error("Ошибка при удалении!");
+          throw new Error("Ошибка при удалении пользователя!");
         }
       });
       return {

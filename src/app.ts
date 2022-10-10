@@ -21,24 +21,24 @@ import dealRouters from "./routers/deal";
 import DealHandlers from "./handlers/deal";
 
 // catalog modules
-
 import catalogRouters from "./routers/catalog";
 import CatalogHandlers from "./handlers/catalog";
 
 // dashboard modules
-
 import dashboardRouters from "./routers/dashboard";
 import DashboardHandlers from "./handlers/dashboard";
 
 // report modules
-
 import reportRouters from "./routers/report";
 import ReportHandlers from "./handlers/report";
 
 // transaction modules
-
 import transactionRouters from "./routers/transaction";
 import TransactionHandlers from "./handlers/transaction";
+
+// blog modules
+import blogRouters from "./routers/blog";
+import BlogHandlers from "./handlers/blog";
 
 const appInstance = (app, opt, done) => {
   const storage = multer.diskStorage({
@@ -107,6 +107,7 @@ const appInstance = (app, opt, done) => {
   app.decorate("dashboardHandlers", new DashboardHandlers(app.pg));
   app.decorate("reportHandlers", new ReportHandlers(app.pg));
   app.decorate("transactionHandlers", new TransactionHandlers(app.pg));
+  app.decorate("blogHandlers", new BlogHandlers(app.pg));
   done();
 };
 
@@ -174,6 +175,10 @@ const buildApp = (opt: FastifyServerOptions) => {
 
   app.register(transactionRouters, {
     prefix: "/transfers",
+  });
+
+  app.register(blogRouters, {
+    prefix: "/blogs",
   });
 
   app.register(fastifyStatic, {
