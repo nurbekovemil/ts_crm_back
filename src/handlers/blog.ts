@@ -9,7 +9,6 @@ class BlogHandlers {
   async createBlog({ id }, { title, description }, { blogs }) {
     const client = await this.db.connect();
     try {
-      console.log(blogs);
       const { rows } = await client.query(
         `
         insert into blogs (title, description, user_id) values ($1, $2, $3) returning id

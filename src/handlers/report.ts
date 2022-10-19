@@ -27,8 +27,8 @@ class ReportHandlers {
         inner join order_weights o_w on o_w.id = o.weight
         inner join order_currencies o_c on o_c.id = o.currency 
         where d.status = 2 
-        ${date_from.trim() != "" ? ` and d.created_at >= '${date_from}'` : ""}
-        ${date_to.trim() != "" ? ` and d.created_at <= '${date_to}'` : ""}
+        ${date_from ? ` and d.created_at >= '${date_from}'` : ""}
+        ${date_to ? ` and d.created_at <= '${date_to}'` : ""}
         ${
           search_name.trim() != "" && is_members
             ? ` and u_f.username like '%${search_name}%' or u_t.username like '%${search_name}%'`

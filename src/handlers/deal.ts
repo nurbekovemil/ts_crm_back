@@ -10,15 +10,6 @@ class DealHandlers {
     const client = await this.db.connect();
     try {
       let deal_status = 1;
-      // let userfromaccount = await client.query(
-      //   ` select uc.*, u.username, r.role
-      //     from user_accounts uc
-      //     inner join users u on u.id = uc.user_id
-      //     inner join roles r on r.id = u.role
-      //     where uc.user_id = $1`,
-      //   [user_from]
-      // );
-      // let cd = false;
       const orderfrom = await client.query(
         "select * from orders where id = $1",
         [order_from]
@@ -26,52 +17,42 @@ class DealHandlers {
       const orderto = await client.query("select * from orders where id = $1", [
         order_to,
       ]);
-      // if (userfromaccount.rows[0].count < orderto.rows[0].cost) {
-      //   await client.query("delete from orders where id = $1", [order_from]);
-      //   throw new Error(`У вас недостаточно средств для предложения!`);
-      // }
-      // Двойной встречный аукцион
-      if (
-        !orderfrom.rows[0].is_auction &&
-        orderfrom.rows[0].amount <= orderto.rows[0].amount
-      ) {
-        deal_status = 5;
-
-        await client.query("update orders set status = 3 where id = $1", [
-          order_to,
-        ]);
-      } else if (
-        !orderfrom.rows[0].is_auction &&
-        orderfrom.rows[0].amount > orderto.rows[0].amount
-      ) {
+      // Если пользователь хочет купить/предложить больше чем указано в количестве
+      if (orderfrom.rows[0].amount > orderto.rows[0].amount) {
+        await client.query("delete from orders where id = $1", [order_from]);
         throw new Error(
-          `Вы можете купить меньше чем ${orderto.rows[0].amount} количество!`
+          `Вы можете купить/предложить ${orderto.rows[0].amount} количество!`
         );
       }
-      // Стандартный аукцион
-      else if (orderfrom.rows[0].is_auction) {
-        deal_status = 1;
-        await client.query("update orders set status = 3 where id = $1", [
-          order_to,
-        ]);
+      // Двойной встречный аукцион start code
+      if (!orderfrom.rows[0].is_auction) {
+        deal_status = 5;
+        if (orderfrom.rows[0].amount < orderto.rows[0].amount) {
+          await client.query(
+            `update orders 
+              set amount = orders.amount - ${orderfrom.rows[0].amount}, 
+              cost = orders.cost - ${orderfrom.rows[0].cost}
+              where id = $1`,
+            [order_to]
+          );
+        }
+        if (orderfrom.rows[0].amount == orderto.rows[0].amount) {
+          await client.query("update orders set status = 3 where id = $1", [
+            order_to,
+          ]);
+        }
       }
-      const { rows } = await client.query(
-        `select * from deals where  user_from = $1 and user_to = $2 and order_from = $3 and order_to = $4`,
-        [user_from, user_to, order_from, order_to]
-      );
-      if (rows.length) {
-        return {
-          message: "Вы уже отправили предложение!",
-        };
-      }
+      // Добавляем новую сделку
       await client.query(
         `insert into deals (user_from, user_to, order_from, order_to, status) 
 				values($1, $2, $3, $4, $5)`,
         [user_from, user_to, order_from, order_to, deal_status]
       );
+      // Статус заявки отправителя "Предложения"
       await client.query("update orders set status = 8 where id = $1", [
         order_from,
       ]);
+
       return {
         message: "Предложение успешно отправлен!",
       };
@@ -262,35 +243,33 @@ class DealHandlers {
   async updateDealStatus(status, deal_id) {
     const client = await this.db.connect();
     try {
-      const { rows } = await client.query(
-        "update deals set status = $1 where id = $2 returning *",
-        [status, deal_id]
-      );
+      const { rows } = await client.query("select * from deals where id = $1", [
+        deal_id,
+      ]);
       let { order_from, order_to, user_from, user_to, id } = rows[0];
       // получаем количество и стоимость заявки покупателя
       const orderfrom = await client.query(
         "select amount, cost from orders where id = $1",
         [order_from]
       );
-
       // получаем количество и стоимость заяки продавца
       const orderto = await client.query(
         "select amount from orders where id = $1",
         [order_to]
       );
-      // после подтверждения закрываем заявки
+      // Статус заявки "Принять на исполнение"
       if (status === 5) {
-        // если количество больще чем или равно, тогда закрываем
-        if (orderfrom.rows[0].amount >= orderto.rows[0].amount) {
-          await client.query(
-            "update orders set status = 3 where id = $1 or id = $2",
-            [order_from, order_to]
-          );
-          await client.query(
-            "update deals set status = 6 where id <> $1 and order_to = $2 and status <> 2",
-            [deal_id, order_to]
-          );
-        } else {
+        // если количество больше тогда отказываемся принять
+        if (orderfrom.rows[0].amount > orderto.rows[0].amount) {
+          throw new Error("Недостаточно количество!");
+        }
+        // если количество равно тогда закрываем заявку
+        if (orderfrom.rows[0].amount == orderto.rows[0].amount) {
+          await client.query("update orders set status = 3 where id = $1", [
+            order_to,
+          ]);
+        }
+        if (orderfrom.rows[0].amount < orderto.rows[0].amount) {
           await client.query(
             `update orders 
               set amount = orders.amount - ${orderfrom.rows[0].amount}, 
@@ -298,11 +277,10 @@ class DealHandlers {
               where id = $1`,
             [order_to]
           );
-          await client.query(`update orders set status = 3 where id = $1`, [
-            order_from,
-          ]);
         }
-      } else if (status === 2) {
+      }
+      // Статус заявки "Состоялось"
+      if (status === 2) {
         let transfer_status = 1;
         let userfrom = await client.query(
           ` select uc.*, u.username, r.role
@@ -317,7 +295,7 @@ class DealHandlers {
             `update user_accounts set count = count ${action} '${total}' where user_id = ${user_id}`
           );
         if (
-          parseInt(userfrom.rows[0].count) > parseInt(orderfrom.rows[0].cost)
+          parseInt(userfrom.rows[0].count) >= parseInt(orderfrom.rows[0].cost)
         ) {
           transfer_status = 2;
           await updateUserAccounts(user_from, "-", orderfrom.rows[0].cost);
@@ -334,6 +312,10 @@ class DealHandlers {
           id,
         ]);
       }
+      await client.query("update deals set status = $1 where id = $2", [
+        status,
+        deal_id,
+      ]);
       return {
         message:
           status == 2 || status == 1 || status == 5 || status == 6

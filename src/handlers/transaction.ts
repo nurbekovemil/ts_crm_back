@@ -105,7 +105,9 @@ class TransactionHandlers {
   ) {
     const client = await this.db.connect();
     try {
-      let offset: number = page * limit - limit;
+      limit = limit || 10;
+      page = page || 1;
+      let offset = page * limit - limit;
       const queryString = `
       select 
       t.*,
@@ -121,8 +123,8 @@ class TransactionHandlers {
       inner join transaction_types tt on tt.id = t.type
       inner join transaction_status ts on ts.id = t.status
       ${role == "USER" ? `where t.user_from = ${id} or t.user_to = ${id}` : ""}
-      ${date_from.trim() != "" ? ` and t.created_at >= '${date_from}'` : ""}
-      ${date_to.trim() != "" ? ` and t.created_at <= '${date_to}'` : ""}
+      ${date_from ? ` and t.created_at >= '${date_from}'` : ""}
+      ${date_to ? ` and t.created_at <= '${date_to}'` : ""}
       limit ${limit} offset ${offset}
       `;
       const { rows } = await client.query(queryString);
