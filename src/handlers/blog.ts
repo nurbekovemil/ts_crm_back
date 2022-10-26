@@ -65,10 +65,14 @@ class BlogHandlers {
       b.title,
       b.description,
       u.username,
+      jsonb_agg(distinct bf.*) as images,
       to_char(b.created_at, 'YYYY-MM-DD, HH24:MI') as created_at
       from blogs b
       inner join users u on u.id = b.user_id
+      left join blog_files bf on bf.blog_id = b.id
+      group by b.id, b.title, b.description, b.created_at, u.username
       order by b.created_at desc
+      
       `);
       return rows;
     } catch (error) {

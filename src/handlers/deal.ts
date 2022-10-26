@@ -312,10 +312,10 @@ class DealHandlers {
           id,
         ]);
       }
-      await client.query("update deals set status = $1 where id = $2", [
-        status,
-        deal_id,
-      ]);
+      const queryString = `update deals set status = ${status} ${
+        status == 5 ? ",created_at = NOW()" : ""
+      } where id = ${deal_id}`;
+      await client.query(queryString);
       return {
         message:
           status == 2 || status == 1 || status == 5 || status == 6
@@ -334,24 +334,24 @@ class DealHandlers {
     try {
       const { rows } = await client.query(
         `
-        select 
-        o.id, 
-        o.title, 
-        o.amount,
-        o.price,
-        o.cost,
-        to_char(d.created_at, 'DD.MM.YYYY') as created_at,
+      select 
+      o.id, 
+      o.title, 
+      o.amount,
+      o.price,
+      o.cost,
+      to_char(d.created_at, 'DD.MM.YYYY') as created_at,
       oc.symbol as currency_symbol,
       ow.title as order_weight
-        from deals d 
-        inner join orders o 
-        on o.id = d.order_from 
+      from deals d 
+      inner join orders o 
+      on o.id = d.order_from 
       inner join order_currencies oc
       on o.currency = oc.id
       inner join order_weights ow
       on ow.id = o.weight
-        where d.order_to = $1 and d.status = 1
-        order by o.cost desc
+      where d.order_to = $1 and d.status = 1
+      order by o.cost desc
       `,
         [id]
       );
