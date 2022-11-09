@@ -40,6 +40,10 @@ import TransactionHandlers from "./handlers/transaction";
 import blogRouters from "./routers/blog";
 import BlogHandlers from "./handlers/blog";
 
+// tender modules
+import tenderRouters from "./routers/tender";
+import TenderHandlers from "./handlers/tender";
+
 const appInstance = (app, opt, done) => {
   const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -50,27 +54,28 @@ const appInstance = (app, opt, done) => {
       cb(null, `${file.fieldname}-${Date.now()}.${fx}`);
     },
   });
+  const allowedFileFormats = (req, file, cb) => {
+    if (
+      file.mimetype == "application/msword" ||
+      file.mimetype ==
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      file.mimetype == "image/png" ||
+      file.mimetype == "image/jpg" ||
+      file.mimetype == "image/jpeg" ||
+      file.mimetype == "application/pdf"
+    ) {
+      cb(null, true);
+    } else {
+      cb(null, false);
+      cb(new Error("Разрешено .png, .jpg and .jpeg форматы!"));
+    }
+  };
   // order create decorate
   app.decorate(
     "upload",
     multer({
       storage: storage,
-      fileFilter: (req, file, cb) => {
-        if (
-          file.mimetype == "application/msword" ||
-          file.mimetype ==
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-          file.mimetype == "image/png" ||
-          file.mimetype == "image/jpg" ||
-          file.mimetype == "image/jpeg" ||
-          file.mimetype == "application/pdf"
-        ) {
-          cb(null, true);
-        } else {
-          cb(null, false);
-          cb(new Error("Only .png, .jpg and .jpeg format allowed!"));
-        }
-      },
+      fileFilter: allowedFileFormats,
     })
   );
   // deal with comment
@@ -78,24 +83,25 @@ const appInstance = (app, opt, done) => {
     "dealComment",
     multer({
       storage: storage,
+      fileFilter: allowedFileFormats,
+    })
+  );
+
+  app.decorate(
+    "onlyDocs",
+    multer({
+      storage: storage,
       fileFilter: (req, file, cb) => {
         if (
           file.mimetype == "application/msword" ||
           file.mimetype ==
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-          file.mimetype == "image/jpeg" ||
-          file.mimetype == "image/jpg" ||
-          file.mimetype == "image/png" ||
           file.mimetype == "application/pdf"
         ) {
           cb(null, true);
         } else {
           cb(null, false);
-          cb(
-            new Error(
-              "Only .png, .jpg, .jpeg, .doc, .docx, .pdf format allowed!"
-            )
-          );
+          cb(new Error("Разрешено .doc, .docx, .pdf форматы!"));
         }
       },
     })
@@ -108,6 +114,7 @@ const appInstance = (app, opt, done) => {
   app.decorate("reportHandlers", new ReportHandlers(app.pg));
   app.decorate("transactionHandlers", new TransactionHandlers(app.pg));
   app.decorate("blogHandlers", new BlogHandlers(app.pg));
+  app.decorate("tenderHandlers", new TenderHandlers(app.pg));
   done();
 };
 
@@ -122,8 +129,8 @@ const buildApp = (opt: FastifyServerOptions) => {
     connectionString: `postgres://${user}:${password}@${host}/${database}`,
   });
   app.register(fastifyCors, {
-    origin: "https://ts.kse.kg",
-    // origin: "http://localhost:8080",
+    // origin: "https://ts.kse.kg",
+    origin: "http://localhost:8080",
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     preflightContinue: false,
     optionsSuccessStatus: 204,
@@ -154,9 +161,11 @@ const buildApp = (opt: FastifyServerOptions) => {
   app.register(userRouters, {
     prefix: "/users",
   });
+
   app.register(orderRouters, {
     prefix: "/orders",
   });
+
   app.register(dealRouters, {
     prefix: "/deals",
   });
@@ -179,6 +188,10 @@ const buildApp = (opt: FastifyServerOptions) => {
 
   app.register(blogRouters, {
     prefix: "/blogs",
+  });
+
+  app.register(tenderRouters, {
+    prefix: "/tenders",
   });
 
   app.register(fastifyStatic, {

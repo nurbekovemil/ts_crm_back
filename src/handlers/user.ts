@@ -112,9 +112,10 @@ class UserHandlers {
     const client = await this.db.connect();
     try {
       const { user_type, data } = user_data;
+      const role = user_type == 3 ? 4 : 2;
       const { rows } = await client.query(
         "insert into users (role, status, type, info) values ($1, $2, $3, $4) returning id",
-        [2, 1, user_type, data]
+        [role, 1, user_type, data]
       );
       await client.query(
         "insert into user_accounts (user_id, count, currency, symbol)values($1, 0.00, 'сом', 'сом')",
